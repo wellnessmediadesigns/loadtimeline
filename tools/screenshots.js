@@ -166,28 +166,43 @@ function dashboard() {
   return frame(s);
 }
 
-// ===================== SCREEN 2: ACTIVE LOAD (one-tap) =====================
+// Pickup/Delivery segmented control. activeStop: 'pickup' | 'delivery'.
+function stopSwitch(x, y, w, activeStop) {
+  const h = 52, half = (w - 8) / 2;
+  let s = rect(x, y, w, h, 14, C.cardAlt, { stroke: C.border });
+  const tabs = [['pickup', 'arrow-up-circle', 'Pickup', true], ['delivery', 'arrow-down-circle', 'Delivery', false]];
+  tabs.forEach((tb, i) => {
+    const tx = x + 4 + i * half;
+    const active = tb[0] === activeStop;
+    if (active) { s += rect(tx + 1, y + 5, half - 2, h - 10, 10, C.navy, { opacity: 0.05 }); s += rect(tx, y + 4, half, h - 8, 10, C.card, { stroke: C.border }); }
+    const fg = active ? C.text : C.sec, ic = active ? C.accent : C.sec;
+    const label = tb[2], cx = tx + half / 2;
+    const tw = label.length * 9, total = 20 + 8 + tw, sx = cx - total / 2;
+    s += icon(sx + 10, y + h / 2, tb[1], 18, ic);
+    s += txt(sx + 28, y + h / 2 + 5, label, { size: 15, weight: 700, fill: fg });
+    if (tb[3]) s += `<circle cx="${tx + half - 16}" cy="${y + 16}" r="3.5" fill="${C.success}"/>`;
+  });
+  return s;
+}
+
+// ===================== SCREEN 2: ACTIVE LOAD (one-tap, pickup) =====================
 function activeLoad() {
   let s = header('Load 48213', 'Costco Wholesale · TQL');
-  // route card
+  // stop selector
   let ry = 102;
-  s += card(20, ry, W - 40, 92);
-  s += icon(44, ry + 28, 'arrow-up-circle', 20, C.accent);
-  s += txt(64, ry + 24, 'PICKUP', { size: 10, weight: 700, fill: C.sec, ls: 0.5 });
-  s += txt(64, ry + 40, 'Ontario, CA · Costco DC', { size: 14, weight: 600 });
-  s += icon(44, ry + 66, 'arrow-down-circle', 20, C.accent);
-  s += txt(64, ry + 62, 'DELIVERY', { size: 10, weight: 700, fill: C.sec, ls: 0.5 });
-  s += txt(64, ry + 78, 'Phoenix, AZ · Costco #1108', { size: 14, weight: 600 });
+  s += stopSwitch(20, ry, W - 40, 'pickup');
+  s += icon(30, ry + 76, 'location', 14, C.sec);
+  s += txt(44, ry + 81, 'Ontario, CA · Costco DC', { size: 14, weight: 500, fill: C.sec });
 
-  // RECORD EVENT
-  let ey = ry + 116;
-  s += overline(20, ey, 'Record Event');
+  // RECORD PICKUP EVENT (5 events: pickup ends in Loaded)
+  let ey = ry + 110;
+  s += overline(20, ey, 'Record Pickup Event');
   const events = [
     ['Arrived', 'location', true], ['Checked In', 'clipboard', true],
     ['At Dock', 'enter', true], ['Loaded', 'cube', false],
-    ['Unloaded', 'file-tray-full', false], ['Departed', 'exit', false],
+    ['Departed', 'exit', false],
   ];
-  const bw = (W - 40 - 10) / 2, bh = 104;
+  const bw = (W - 40 - 10) / 2, bh = 100;
   let by = ey + 14;
   events.forEach((e, i) => {
     const col = i % 2, row = Math.floor(i / 2);
@@ -196,59 +211,64 @@ function activeLoad() {
     s += rect(x + 0, yy + 3, bw, bh, 16, C.navy, { opacity: 0.05 });
     s += rect(x, yy, bw, bh, 16, recorded ? C.successSoft : C.card, { stroke: recorded ? C.success : C.border, sw: 1.5 });
     s += iconChip(x + 14, yy + 14, 44, recorded ? C.success : C.accentSoft, recorded ? 'checkmark' : e[1], recorded ? C.white : C.accent, 22);
-    s += txt(x + 14, yy + 80, e[0], { size: 16, weight: 700 });
-    s += txt(x + 14, yy + 96, recorded ? 'Recorded' : 'Tap to log', { size: 11, weight: 600, fill: C.sec });
+    s += txt(x + 14, yy + 78, e[0], { size: 16, weight: 700 });
+    s += txt(x + 14, yy + 94, recorded ? 'Recorded' : 'Tap to log', { size: 11, weight: 600, fill: C.sec });
   });
 
-  // DETENTION (2 hero cards)
-  let dy = by + 3 * (bh + 10) + 6;
-  s += overline(20, dy, 'Detention');
-  const dw = (W - 40 - 10) / 2, dh = 96;
+  // PICKUP DETENTION 2x2
+  let dy = by + 3 * (bh + 10) + 8;
+  s += overline(20, dy, 'Pickup Detention');
+  const dw = (W - 40 - 10) / 2, dh = 88;
   s += statCard(20, dy + 14, dw, dh, 'Time On Site', '6h 51m', { icon: 'time', fg: C.danger, bg: C.dangerSoft });
-  s += txt(34, dy + 14 + 14, '', {});
-  s += statCard(20 + dw + 10, dy + 14, dw, dh, 'Potential Detention', '4h 51m', { icon: 'alert-circle', fg: C.danger, bg: C.dangerSoft });
+  s += statCard(20 + dw + 10, dy + 14, dw, dh, 'Wait Time', '2h 10m', { icon: 'hourglass', fg: C.warning, bg: C.warningSoft });
+  s += statCard(20, dy + 14 + dh + 10, dw, dh, 'Loading', '4h 23m', { icon: 'cube', fg: C.success, bg: C.successSoft });
+  s += statCard(20 + dw + 10, dy + 14 + dh + 10, dw, dh, 'Potential Detention', '4h 51m', { icon: 'alert-circle', fg: C.danger, bg: C.dangerSoft });
+  s += txt(20, dy + 14 + 2 * (dh + 10) + 16, 'Combined on site (both stops): 9h 51m · Potential detention: 5h 51m', { size: 11, weight: 600, fill: C.sec });
   return frame(s);
 }
 
-// ===================== SCREEN 3: TIMELINE + DETENTION =====================
-function timeline() {
-  let s = header('Load 48213', 'Timeline & Detention');
-  // detention 2x2
-  let dy = 104;
-  s += overline(20, dy, 'Detention');
-  const dw = (W - 40 - 10) / 2, dh = 92;
-  s += statCard(20, dy + 12, dw, dh, 'Time On Site', '6h 51m', { icon: 'time', fg: C.danger, bg: C.dangerSoft });
-  s += statCard(20 + dw + 10, dy + 12, dw, dh, 'Wait Time', '2h 10m', { icon: 'hourglass', fg: C.warning, bg: C.warningSoft });
-  s += statCard(20, dy + 12 + dh + 10, dw, dh, 'Loading', '4h 23m', { icon: 'cube', fg: C.success, bg: C.successSoft });
-  s += statCard(20 + dw + 10, dy + 12 + dh + 10, dw, dh, 'Unloading', '—', { icon: 'file-tray-full', fg: C.success, bg: C.successSoft });
+// ===================== SCREEN 3: TIMELINE grouped by stop =====================
+function timelineGroup(x, y, w, stopLabel, stopIcon, loc, rows, det) {
+  let s = '';
+  // stop header chip
+  s += icon(x + 8, y + 8, stopIcon, 15, C.accent);
+  s += txt(x + 24, y + 13, `${stopLabel}  ·  ${loc}`, { size: 12, weight: 700, fill: C.sec, ls: 0.4 });
+  const cardY = y + 26, rowH = 60, cardH = rows.length * rowH + 24;
+  s += card(x, cardY, w, cardH);
+  const railX = x + 100;
+  rows.forEach((r, i) => {
+    const yy = cardY + 26 + i * rowH;
+    s += txt(x + 86, yy + 4, r[0], { size: 12, weight: 700, anchor: 'end' });
+    if (i < rows.length - 1) s += `<line x1="${railX}" y1="${yy}" x2="${railX}" y2="${yy + rowH}" stroke="${C.border}" stroke-width="2"/>`;
+    s += `<circle cx="${railX}" cy="${yy}" r="11" fill="${C.accent}"/>`;
+    s += icon(railX, yy, r[3], 11, C.white);
+    s += txt(railX + 20, yy + 3, r[1], { size: 15, weight: 700 });
+    s += txt(railX + 20, yy + 21, r[2], { size: 11, weight: 500, fill: C.sec });
+  });
+  // detention line under card
+  const ly = cardY + cardH + 16;
+  s += icon(x + 6, ly - 4, 'time', 12, det.color);
+  s += txt(x + 20, ly, det.text, { size: 12, weight: 600, fill: C.text });
+  return { svg: s, bottom: ly + 14 };
+}
 
-  // TIMELINE
-  let ty = dy + 12 + 2 * (dh + 10) + 14;
-  s += overline(20, ty, 'Timeline');
-  let cy = ty + 14;
-  const rows = [
-    ['8:01 AM', 'Arrived', 'Ontario, CA · Costco DC', 'location'],
-    ['8:07 AM', 'Checked In', 'Guard shack · Door assigned', 'clipboard'],
+function timeline() {
+  let s = header('Load 48213', 'Pickup & Delivery');
+  let y = 100;
+  const g1 = timelineGroup(20, y, W - 40, 'PICKUP', 'arrow-up-circle', 'Ontario, CA', [
+    ['8:01 AM', 'Arrived', 'Jun 17 · Costco DC', 'location'],
     ['10:11 AM', 'At Dock', 'Door 42', 'enter'],
     ['2:34 PM', 'Loaded', '24 pallets · Seal #884201', 'cube'],
     ['2:52 PM', 'Departed', 'Ontario, CA', 'exit'],
-  ];
-  const rowH = 82;
-  s += card(20, cy, W - 40, rows.length * rowH + 16);
-  const railX = 120;
-  rows.forEach((r, i) => {
-    const yy = cy + 24 + i * rowH;
-    // time
-    s += txt(104, yy + 4, r[0], { size: 13, weight: 700, anchor: 'end' });
-    // rail line
-    if (i < rows.length - 1) s += `<line x1="${railX}" y1="${yy}" x2="${railX}" y2="${yy + rowH}" stroke="${C.border}" stroke-width="2"/>`;
-    // dot
-    s += `<circle cx="${railX}" cy="${yy}" r="12" fill="${C.accent}"/>`;
-    s += icon(railX, yy, r[3], 12, C.white);
-    // body
-    s += txt(railX + 22, yy + 4, r[1], { size: 16, weight: 700 });
-    s += txt(railX + 22, yy + 24, r[2], { size: 12, weight: 500, fill: C.sec });
-  });
+  ], { text: 'On site 6h 51m · Wait 2h 10m · Detention 4h 51m', color: C.danger });
+  s += g1.svg;
+  const g2 = timelineGroup(20, g1.bottom + 6, W - 40, 'DELIVERY', 'arrow-down-circle', 'Phoenix, AZ', [
+    ['6:00 AM', 'Arrived', 'Jun 18 · Costco #1108', 'location'],
+    ['6:30 AM', 'At Dock', 'Door 7', 'enter'],
+    ['8:45 AM', 'Unloaded', 'Received complete', 'file-tray-full'],
+    ['9:00 AM', 'Departed', 'Phoenix, AZ', 'exit'],
+  ], { text: 'On site 3h 0m · Wait 30m · Detention 1h 0m', color: C.warning });
+  s += g2.svg;
   return frame(s);
 }
 

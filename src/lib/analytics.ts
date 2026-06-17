@@ -28,11 +28,11 @@ export function computeAnalytics(reportsGenerated: number): AnalyticsSummary {
     const events = listEvents(load.id);
     if (events.length === 0) continue;
     const d = computeDetention(events);
-    detainedMs += d.potentialDetentionMs;
-    if (d.onSiteMs != null) {
-      hoursLogged += d.onSiteMs;
+    detainedMs += d.totalPotentialDetentionMs;
+    if (d.totalOnSiteMs != null) {
+      hoursLogged += d.totalOnSiteMs;
       if (!d.ongoing) {
-        facilitySum += d.onSiteMs;
+        facilitySum += d.totalOnSiteMs;
         facilityCount += 1;
       }
     }

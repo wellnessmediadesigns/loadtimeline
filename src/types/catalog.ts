@@ -1,7 +1,7 @@
 /** Display metadata for event and incident enums (labels, icons, colors). */
 import type { ComponentProps } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import type { EventType, IncidentType, Severity } from './index';
+import type { EventType, IncidentType, Severity, StopType } from './index';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -11,7 +11,7 @@ export interface EventMeta {
   icon: IoniconName;
 }
 
-/** Ordered as the load progresses; drives the action-button grid + timeline. */
+/** All event types with display metadata. */
 export const EVENT_CATALOG: EventMeta[] = [
   { type: 'ARRIVED', label: 'Arrived', icon: 'location' },
   { type: 'CHECKED_IN', label: 'Checked In', icon: 'clipboard' },
@@ -24,6 +24,31 @@ export const EVENT_CATALOG: EventMeta[] = [
 export const EVENT_META: Record<EventType, EventMeta> = Object.fromEntries(
   EVENT_CATALOG.map((e) => [e.type, e]),
 ) as Record<EventType, EventMeta>;
+
+/** Events recordable at each stop — pickup ends in Loaded, delivery in Unloaded. */
+const PICKUP_TYPES: EventType[] = ['ARRIVED', 'CHECKED_IN', 'AT_DOCK', 'LOADED', 'DEPARTED'];
+const DELIVERY_TYPES: EventType[] = ['ARRIVED', 'CHECKED_IN', 'AT_DOCK', 'UNLOADED', 'DEPARTED'];
+
+export function eventsForStop(stop: StopType): EventMeta[] {
+  const types = stop === 'pickup' ? PICKUP_TYPES : DELIVERY_TYPES;
+  return types.map((t) => EVENT_META[t]);
+}
+
+export interface StopMeta {
+  stop: StopType;
+  label: string;
+  shortLabel: string;
+  icon: IoniconName;
+  /** The "service" event for this stop (Loaded at pickup, Unloaded at delivery). */
+  serviceLabel: string;
+}
+
+export const STOP_META: Record<StopType, StopMeta> = {
+  pickup: { stop: 'pickup', label: 'Pickup', shortLabel: 'Pickup', icon: 'arrow-up-circle', serviceLabel: 'Loading' },
+  delivery: { stop: 'delivery', label: 'Delivery', shortLabel: 'Delivery', icon: 'arrow-down-circle', serviceLabel: 'Unloading' },
+};
+
+export const STOP_ORDER: StopType[] = ['pickup', 'delivery'];
 
 export interface IncidentMeta {
   type: IncidentType;

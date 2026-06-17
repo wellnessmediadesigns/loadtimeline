@@ -82,6 +82,12 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
       CREATE INDEX IF NOT EXISTS idx_loads_status ON loads(status, updated_at);
     `);
   },
+  // v2 — per-stop tracking (pickup vs delivery)
+  (d) => {
+    d.execSync(`ALTER TABLE events ADD COLUMN stop TEXT NOT NULL DEFAULT 'pickup';`);
+    // Existing UNLOADED events belong to the delivery stop.
+    d.execSync(`UPDATE events SET stop = 'delivery' WHERE type = 'UNLOADED';`);
+  },
 ];
 
 /** Applies any pending migrations using PRAGMA user_version. */

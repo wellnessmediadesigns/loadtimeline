@@ -16,7 +16,7 @@ export function LoadCard({ load, onPress }: { load: Load; onPress: () => void })
   const incidents = listIncidents(load.id);
   const last = events[events.length - 1];
   const detention = computeDetention(events);
-  const level = onSiteLevel(detention.onSiteMs);
+  const level = onSiteLevel(detention.totalOnSiteMs);
 
   const levelColor =
     level === 'significant' ? t.colors.danger : level === 'watch' ? t.colors.warning : t.colors.success;
@@ -50,8 +50,8 @@ export function LoadCard({ load, onPress }: { load: Load; onPress: () => void })
 
       <View style={styles.metaRow}>
         <Meta icon="flag" text={last ? EVENT_META[last.type]?.label ?? '—' : 'No events'} color={t.colors.textSecondary} />
-        {detention.onSiteMs != null ? (
-          <Meta icon="time" text={formatDuration(detention.onSiteMs)} color={levelColor} />
+        {detention.totalOnSiteMs != null ? (
+          <Meta icon="time" text={formatDuration(detention.totalOnSiteMs)} color={levelColor} />
         ) : null}
         {incidents.length > 0 ? (
           <Meta icon="warning" text={`${incidents.length}`} color={t.colors.danger} />

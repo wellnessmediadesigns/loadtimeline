@@ -1,10 +1,11 @@
 import { getDb, newId } from '../client';
 import { touchLoad } from './loads';
-import type { EventType, GeoStamp, LoadEvent } from '@/types';
+import type { EventType, GeoStamp, LoadEvent, StopType } from '@/types';
 
 interface EventRow {
   id: string;
   load_id: string;
+  stop: StopType;
   type: EventType;
   timestamp: number;
   latitude: number | null;
@@ -18,6 +19,7 @@ function mapRow(r: EventRow): LoadEvent {
   return {
     id: r.id,
     loadId: r.load_id,
+    stop: r.stop,
     type: r.type,
     timestamp: r.timestamp,
     latitude: r.latitude,
@@ -30,6 +32,7 @@ function mapRow(r: EventRow): LoadEvent {
 
 export function addEvent(
   loadId: string,
+  stop: StopType,
   type: EventType,
   geo: GeoStamp,
   notes?: string | null,
@@ -38,9 +41,9 @@ export function addEvent(
   const now = Date.now();
   const id = newId();
   db.runSync(
-    `INSERT INTO events (id, load_id, type, timestamp, latitude, longitude, address, notes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, loadId, type, now, geo.latitude, geo.longitude, geo.address, notes ?? null, now],
+    `INSERT INTO events (id, load_id, stop, type, timestamp, latitude, longitude, address, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, loadId, stop, type, now, geo.latitude, geo.longitude, geo.address, notes ?? null, now],
   );
   touchLoad(loadId);
   return getEvent(id)!;

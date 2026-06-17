@@ -53,7 +53,7 @@ export default function ReportScreen() {
     { icon: 'information-circle', label: 'Load details', ok: true },
     { icon: 'git-commit', label: `Timeline · ${events.length} events`, ok: events.length > 0 },
     { icon: 'navigate', label: 'GPS & arrival/departure records', ok: events.some((e) => e.latitude != null) },
-    { icon: 'time', label: `Detention summary · ${formatDuration(detention.onSiteMs)} on site`, ok: detention.onSiteMs != null },
+    { icon: 'time', label: `Detention summary · ${formatDuration(detention.totalOnSiteMs)} on site`, ok: detention.totalOnSiteMs != null },
     { icon: 'warning', label: `Incident log · ${incidents.length}`, ok: incidents.length > 0 },
     { icon: 'images', label: `Photos · ${photoCount}${isPro ? ' (full gallery)' : ''}`, ok: photoCount > 0 },
   ] as const;

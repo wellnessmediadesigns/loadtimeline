@@ -6,10 +6,11 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { brand } from '@/theme/colors';
-import { computeDetention } from './detention';
+import { computeDetention, StopDetention } from './detention';
 import { formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
 import { toDataUri } from './photos';
-import { EVENT_META, INCIDENT_META, SEVERITY_LABEL } from '@/types/catalog';
+import { EVENT_META, INCIDENT_META, SEVERITY_LABEL, STOP_META, STOP_ORDER } from '@/types/catalog';
+import type { LoadEvent } from '@/types';
 import { getLoad } from '@/db/queries/loads';
 import { listEvents } from '@/db/queries/events';
 import { listIncidents } from '@/db/queries/incidents';
@@ -57,44 +58,63 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     )
     .join('');
 
-  const timelineHtml = events
-    .map((e) => {
-      const meta = EVENT_META[e.type];
-      const photos = listPhotos('event', e.id);
-      const photoHtml = photos
-        .map((p) => {
-          const data = toDataUri(p.thumbUri);
-          return data ? `<img class="thumb" src="${data}" />` : '';
-        })
-        .join('');
-      const coords = shortCoords(e.latitude, e.longitude);
-      return `
-        <div class="tl-row">
-          <div class="tl-time">${esc(formatTime(e.timestamp))}<span class="tl-date">${esc(formatDate(e.timestamp))}</span></div>
-          <div class="tl-dot"></div>
-          <div class="tl-body">
-            <div class="tl-label">${esc(meta?.label ?? e.type)}</div>
-            ${e.address ? `<div class="tl-sub">${esc(e.address)}</div>` : ''}
-            ${coords ? `<div class="tl-coords">GPS: ${esc(coords)}</div>` : ''}
-            ${e.notes ? `<div class="tl-note">${esc(e.notes)}</div>` : ''}
-            ${photoHtml ? `<div class="thumbs">${photoHtml}</div>` : ''}
-          </div>
-        </div>`;
-    })
-    .join('');
+  const eventRow = (e: LoadEvent) => {
+    const meta = EVENT_META[e.type];
+    const photos = listPhotos('event', e.id);
+    const photoHtml = photos
+      .map((p) => {
+        const data = toDataUri(p.thumbUri);
+        return data ? `<img class="thumb" src="${data}" />` : '';
+      })
+      .join('');
+    const coords = shortCoords(e.latitude, e.longitude);
+    return `
+      <div class="tl-row">
+        <div class="tl-time">${esc(formatTime(e.timestamp))}<span class="tl-date">${esc(formatDate(e.timestamp))}</span></div>
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-label">${esc(meta?.label ?? e.type)}</div>
+          ${e.address ? `<div class="tl-sub">${esc(e.address)}</div>` : ''}
+          ${coords ? `<div class="tl-coords">GPS: ${esc(coords)}</div>` : ''}
+          ${e.notes ? `<div class="tl-note">${esc(e.notes)}</div>` : ''}
+          ${photoHtml ? `<div class="thumbs">${photoHtml}</div>` : ''}
+        </div>
+      </div>`;
+  };
+
+  const timelineHtml = STOP_ORDER.map((s) => {
+    const stopEvents = events.filter((e) => e.stop === s);
+    if (stopEvents.length === 0) return '';
+    const meta = STOP_META[s];
+    const loc = s === 'pickup' ? load.pickupLocation : load.deliveryLocation;
+    return `<div class="stop-group">
+      <div class="stop-head">${esc(meta.label)}${loc ? ` · ${esc(loc)}` : ''}</div>
+      ${stopEvents.map(eventRow).join('')}
+    </div>`;
+  }).join('') || '<div class="muted">No events recorded.</div>';
 
   const statCard = (label: string, value: string) =>
     `<div class="stat"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
 
+  const stopDetentionHtml = (sd: StopDetention) => {
+    const meta = STOP_META[sd.stop];
+    return `<div class="stop-group">
+      <div class="stop-head">${esc(meta.label)}</div>
+      <div class="stats">
+        ${statCard('Time On Site', formatDuration(sd.onSiteMs))}
+        ${statCard('Wait Time', formatDuration(sd.waitMs))}
+        ${statCard(meta.serviceLabel, formatDuration(sd.serviceMs))}
+        ${statCard('Potential Detention', formatDuration(sd.potentialDetentionMs))}
+      </div>
+    </div>`;
+  };
+
+  const anyDetention = detention.pickup.hasActivity || detention.delivery.hasActivity;
   const detentionHtml = `
-    <div class="stats">
-      ${statCard('Time On Site', formatDuration(detention.onSiteMs))}
-      ${statCard('Wait Time', formatDuration(detention.waitMs))}
-      ${statCard('Loading', formatDuration(detention.loadingMs))}
-      ${statCard('Unloading', formatDuration(detention.unloadingMs))}
-      ${statCard('Potential Detention', formatDuration(detention.potentialDetentionMs))}
-    </div>
-    <div class="muted small">Free window: ${detention.freeMinutes / 60}h. Potential detention is time on site beyond the free window.</div>
+    ${detention.pickup.hasActivity ? stopDetentionHtml(detention.pickup) : ''}
+    ${detention.delivery.hasActivity ? stopDetentionHtml(detention.delivery) : ''}
+    ${anyDetention ? `<div class="combined">Combined on site: <b>${formatDuration(detention.totalOnSiteMs)}</b> · Combined potential detention: <b>${formatDuration(detention.totalPotentialDetentionMs)}</b></div>` : '<div class="muted">No detention data yet.</div>'}
+    <div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>
   `;
 
   const incidentsHtml = incidents.length
@@ -161,6 +181,9 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   .stat { border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; min-width: 120px; flex: 1; }
   .stat-v { font-size: 20px; font-weight: 800; }
   .stat-l { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stop-group { margin-bottom: 16px; page-break-inside: avoid; }
+  .stop-head { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: ${brand.navy}; background: #F1F5F9; border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; }
+  .combined { margin-top: 10px; font-size: 13px; color: #111827; }
   .tl-row { display: flex; gap: 12px; padding: 8px 0; border-left: 0; }
   .tl-time { width: 96px; font-size: 13px; font-weight: 700; }
   .tl-date { display: block; font-size: 10px; color: #6B7280; font-weight: 500; }

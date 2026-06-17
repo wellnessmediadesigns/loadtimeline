@@ -2,6 +2,9 @@
 
 export type LoadStatus = 'active' | 'completed';
 
+/** A load has two stops: the shipper (pickup) and the receiver (delivery). */
+export type StopType = 'pickup' | 'delivery';
+
 export type EventType =
   | 'ARRIVED'
   | 'CHECKED_IN'
@@ -45,6 +48,7 @@ export interface Load {
 export interface LoadEvent {
   id: string;
   loadId: string;
+  stop: StopType;
   type: EventType;
   timestamp: number;
   latitude: number | null;
