@@ -28,7 +28,7 @@ Offline-first. No account. No login. No cloud. Everything stays on the device.
 
 ## Tech Stack
 
-React Native · Expo (SDK 56) · TypeScript · Expo Router · SQLite (`expo-sqlite`) ·
+React Native · Expo (SDK 54) · TypeScript · Expo Router · SQLite (`expo-sqlite`) ·
 `expo-location` · `expo-camera` / `expo-image-picker` / `expo-image-manipulator` ·
 `expo-file-system` · `expo-print` + `expo-sharing` for PDFs. Offline-first; no backend.
 
