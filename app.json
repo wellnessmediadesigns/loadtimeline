@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "LoadTimeline",
+    "slug": "loadtimeline",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "loadtimeline",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.organizedfreight.loadtimeline",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "LoadTimeline records the GPS location of each load event so your documentation proves where it happened.",
+        "NSCameraUsageDescription": "LoadTimeline uses the camera to attach photos of freight, seals, and damage to your load timeline.",
+        "NSPhotoLibraryUsageDescription": "LoadTimeline lets you attach photos from your library to load events and incidents.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F172A"
+      },
+      "package": "com.organizedfreight.loadtimeline",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LoadTimeline records the GPS location of each load event so your documentation proves where it happened."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LoadTimeline lets you attach photos from your library to load events and incidents.",
+          "cameraPermission": "LoadTimeline uses the camera to attach photos of freight, seals, and damage to your load timeline."
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
