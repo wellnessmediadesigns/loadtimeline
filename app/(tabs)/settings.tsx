@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Chip, Screen, SectionTitle } from '@/components';
+import { Card, Chip, Logo, Screen, SectionTitle } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings, ThemeMode } from '@/store/settings';
 import { exportBackup, importBackup } from '@/lib/backup';
@@ -83,7 +83,7 @@ export default function Settings() {
             {isPro ? 'Pro unlocked' : 'Upgrade to Pro'}
           </Text>
           <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
-            {isPro ? 'Unlimited loads, reports & premium templates.' : 'Unlimited loads, advanced analytics, premium reports.'}
+            {isPro ? 'Unlimited loads — thanks for your support!' : 'Remove the 25-load limit. One-time purchase.'}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={t.colors.textSecondary} />
@@ -106,13 +106,14 @@ export default function Settings() {
 
       <SectionTitle title="About" style={{ marginTop: 24 }} />
       <Card padded={false}>
-        <Row icon="help-circle" label="Help Center" onPress={() => Linking.openURL(`https://${APP_INFO.website}`)} divider />
+        <Row icon="help-circle" label="Help & How-To" hint="Guide & FAQ" onPress={() => router.push('/help')} divider />
         <Row icon="globe" label="About Organized Freight" hint={APP_INFO.website} onPress={() => Linking.openURL(`https://${APP_INFO.website}`)} divider />
         <Row icon="information-circle" label="Version" hint={APP_INFO.version} />
       </Card>
 
       <View style={styles.footer}>
-        <Text style={[t.typography.subtitle, { color: t.colors.text }]}>{APP_INFO.name}</Text>
+        <Logo size={40} />
+        <Text style={[t.typography.subtitle, { color: t.colors.text, marginTop: 4 }]}>{APP_INFO.name}</Text>
         <Text style={[t.typography.caption, { color: t.colors.accent }]}>{APP_INFO.tagline}</Text>
         <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
           A Product by {APP_INFO.brand}

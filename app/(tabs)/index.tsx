@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, EmptyState, LoadCard, Screen, SectionTitle, StatCard } from '@/components';
+import { Button, Card, EmptyState, LoadCard, Logo, Screen, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { countLoads, listLoads } from '@/db/queries/loads';
@@ -40,8 +40,8 @@ export default function Dashboard() {
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
       <View style={styles.header}>
-        <View>
-          <Text style={[t.typography.overline, { color: t.colors.textSecondary }]}>ORGANIZED FREIGHT</Text>
+        <View style={{ gap: 8 }}>
+          <Logo size={26} wordmark />
           <Text style={[t.typography.display, { color: t.colors.text }]}>LoadTimeline</Text>
           <Text style={[t.typography.body, { color: t.colors.accent }]}>If It Happened, Prove It.</Text>
         </View>

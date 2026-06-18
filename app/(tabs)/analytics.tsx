@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BarChart, Card, EmptyState, ProLock, Screen, SectionTitle, StatCard } from '@/components';
+import { BarChart, Card, EmptyState, Screen, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import {
@@ -19,9 +19,8 @@ import type { IncidentType } from '@/types';
 
 export default function Analytics() {
   const t = useTheme();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { reportsGenerated, isPro } = useSettings();
+  const { reportsGenerated } = useSettings();
 
   const [stats, setStats] = useState<AnalyticsSummary>(() => computeAnalytics(reportsGenerated));
   const [adv, setAdv] = useState<AdvancedAnalytics>(() => computeAdvancedAnalytics());
@@ -36,7 +35,6 @@ export default function Analytics() {
   );
 
   const maxCount = byType.reduce((m, r) => Math.max(m, r.count), 0) || 1;
-  const goPro = () => router.push('/paywall');
 
   if (stats.loadsLogged === 0) {
     return (
@@ -94,69 +92,64 @@ export default function Analytics() {
         </View>
       ) : null}
 
-      {/* Pro: visual trends */}
+      {/* Visual trends */}
       <View style={{ marginTop: 26 }}>
-        <SectionTitle
-          title="Trends"
-          action={isPro ? undefined : { label: 'Pro', onPress: goPro }}
-        />
-        <ProLock locked={!isPro} onUnlock={goPro}>
-          <View style={{ gap: 16 }}>
-            <Card style={{ gap: 8 }}>
-              <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>LOADS PER WEEK</Text>
-              <BarChart data={adv.weekly.map((w) => ({ label: w.label, value: w.loads }))} formatValue={(v) => `${v}`} />
-            </Card>
+        <SectionTitle title="Trends" />
+        <View style={{ gap: 16 }}>
+          <Card style={{ gap: 8 }}>
+            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>LOADS PER WEEK</Text>
+            <BarChart data={adv.weekly.map((w) => ({ label: w.label, value: w.loads }))} formatValue={(v) => `${v}`} />
+          </Card>
 
-            <Card style={{ gap: 8 }}>
-              <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>DETENTION PER WEEK</Text>
-              <BarChart
-                data={adv.weekly.map((w) => ({ label: w.label, value: Math.round((w.detentionMs / 3600000) * 10) / 10, highlight: w.detentionMs > 0 }))}
-                color={t.colors.warning}
-                highlightColor={t.colors.danger}
-                formatValue={(v) => `${v}h`}
-              />
-            </Card>
+          <Card style={{ gap: 8 }}>
+            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>DETENTION PER WEEK</Text>
+            <BarChart
+              data={adv.weekly.map((w) => ({ label: w.label, value: Math.round((w.detentionMs / 3600000) * 10) / 10, highlight: w.detentionMs > 0 }))}
+              color={t.colors.warning}
+              highlightColor={t.colors.danger}
+              formatValue={(v) => `${v}h`}
+            />
+          </Card>
 
-            <Card style={{ gap: 8 }}>
-              <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>AVG FACILITY TIME BY STOP</Text>
-              <BarChart
-                data={[
-                  { label: 'Pickup', value: adv.pickupAvgMs ?? 0 },
-                  { label: 'Delivery', value: adv.deliveryAvgMs ?? 0 },
-                ]}
-                formatValue={(v) => formatDuration(v)}
-                height={100}
-              />
-            </Card>
+          <Card style={{ gap: 8 }}>
+            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>AVG FACILITY TIME BY STOP</Text>
+            <BarChart
+              data={[
+                { label: 'Pickup', value: adv.pickupAvgMs ?? 0 },
+                { label: 'Delivery', value: adv.deliveryAvgMs ?? 0 },
+              ]}
+              formatValue={(v) => formatDuration(v)}
+              height={100}
+            />
+          </Card>
 
-            <Card style={{ gap: 12 }}>
-              <View style={styles.onTimeHead}>
-                <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>ON-TIME PERFORMANCE</Text>
-                {onTimePct != null ? (
-                  <Text style={[t.typography.subtitle, { color: onTimePct >= 80 ? t.colors.success : t.colors.warning }]}>
-                    {onTimePct}% clean
-                  </Text>
-                ) : null}
-              </View>
-              {onTimeTotal > 0 ? (
-                <>
-                  <View style={styles.splitBar}>
-                    <View style={{ flex: adv.cleanLoads || 0.0001, backgroundColor: t.colors.success }} />
-                    <View style={{ flex: adv.detainedLoads || 0.0001, backgroundColor: t.colors.danger }} />
-                  </View>
-                  <View style={styles.legendRow}>
-                    <Legend color={t.colors.success} label={`No detention · ${adv.cleanLoads}`} />
-                    <Legend color={t.colors.danger} label={`Detained · ${adv.detainedLoads}`} />
-                  </View>
-                </>
-              ) : (
-                <Text style={[t.typography.body, { color: t.colors.textSecondary }]}>
-                  Complete a load (Departed at a stop) to see on-time performance.
+          <Card style={{ gap: 12 }}>
+            <View style={styles.onTimeHead}>
+              <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>ON-TIME PERFORMANCE</Text>
+              {onTimePct != null ? (
+                <Text style={[t.typography.subtitle, { color: onTimePct >= 80 ? t.colors.success : t.colors.warning }]}>
+                  {onTimePct}% clean
                 </Text>
-              )}
-            </Card>
-          </View>
-        </ProLock>
+              ) : null}
+            </View>
+            {onTimeTotal > 0 ? (
+              <>
+                <View style={styles.splitBar}>
+                  <View style={{ flex: adv.cleanLoads || 0.0001, backgroundColor: t.colors.success }} />
+                  <View style={{ flex: adv.detainedLoads || 0.0001, backgroundColor: t.colors.danger }} />
+                </View>
+                <View style={styles.legendRow}>
+                  <Legend color={t.colors.success} label={`No detention · ${adv.cleanLoads}`} />
+                  <Legend color={t.colors.danger} label={`Detained · ${adv.detainedLoads}`} />
+                </View>
+              </>
+            ) : (
+              <Text style={[t.typography.body, { color: t.colors.textSecondary }]}>
+                Complete a load (Departed at a stop) to see on-time performance.
+              </Text>
+            )}
+          </Card>
+        </View>
       </View>
     </Screen>
   );

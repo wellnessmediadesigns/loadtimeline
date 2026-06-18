@@ -3,11 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button } from '@/components';
+import { Button, Logo } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { EVENT_CATALOG } from '@/types/catalog';
-import { APP_INFO } from '@/lib/limits';
 
 interface Slide {
   key: string;
@@ -91,9 +90,7 @@ export default function Onboarding() {
   return (
     <View style={[styles.flex, { backgroundColor: t.colors.background, paddingTop: insets.top + 24 }]}>
       <View style={styles.brandRow}>
-        <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>
-          {APP_INFO.brand.toUpperCase()}
-        </Text>
+        <Logo size={22} wordmark />
         {!isLast ? (
           <Text
             style={[t.typography.label, { color: t.colors.accent }]}

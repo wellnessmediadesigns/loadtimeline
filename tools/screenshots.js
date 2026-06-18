@@ -74,6 +74,16 @@ function frame(inner, bg = C.bg, dark = true) {
 
 function overline(x, y, s) { return txt(x, y, s.toUpperCase(), { size: 11, weight: 700, fill: C.sec, ls: 1.2 }); }
 
+// Organized Freight blocks mark (2x2 rounded squares).
+function ofMark(x, y, size, accent) {
+  const a = accent || C.accent;
+  const gap = size * 0.12, cell = (size - gap) / 2, r = cell * 0.3;
+  const pos = [[0, 0, 1], [1, 0, 0.55], [0, 1, 0.55], [1, 1, 1]];
+  let s = '';
+  for (const [cx, cy, op] of pos) s += rect(x + cx * (cell + gap), y + cy * (cell + gap), cell, cell, r, a, { opacity: op });
+  return s;
+}
+
 // Centered icon + label group for buttons (avoids overlap).
 function btnLabel(cx, cy, iconName, label, size, color) {
   const charW = size * 0.56;
@@ -118,9 +128,10 @@ function statCard(x, y, w, h, label, value, opt = {}) {
 function dashboard() {
   let s = '';
   let y = 70;
-  s += overline(20, y + 8, 'Organized Freight');
-  s += txt(20, y + 38, 'LoadTimeline', { size: 30, weight: 800 });
-  s += txt(20, y + 60, 'If It Happened, Prove It.', { size: 14, weight: 600, fill: C.accent });
+  s += ofMark(20, y, 20);
+  s += txt(48, y + 14, 'Organized Freight', { size: 13, weight: 700, fill: C.sec });
+  s += txt(20, y + 46, 'LoadTimeline', { size: 30, weight: 800 });
+  s += txt(20, y + 68, 'If It Happened, Prove It.', { size: 14, weight: 600, fill: C.accent });
 
   // stat grid 2 cols x 3
   const gx = 20, gw = (W - 40 - 10) / 2, gh = 88;
@@ -132,7 +143,7 @@ function dashboard() {
     ['Incidents', '2', 'warning', C.warning, C.warningSoft],
     ['Detention', '3.2h', 'hourglass', C.danger, C.dangerSoft],
   ];
-  let sy = y + 86;
+  let sy = y + 94;
   stats.forEach((st, i) => {
     const col = i % 2, row = Math.floor(i / 2);
     s += statCard(gx + col * (gw + 10), sy + row * (gh + 10), gw, gh, st[0], st[1], { icon: st[2], fg: st[3], bg: st[4] });
@@ -354,7 +365,8 @@ function report() {
   let y = 100;
   s += card(20, 100, W - 40, 116);
   s += rect(36, y + 14, W - 72, 88, 14, C.navy);
-  s += txt(52, y + 36, 'ORGANIZED FREIGHT', { size: 9, weight: 700, fill: '#94A3B8', ls: 1 });
+  s += ofMark(52, y + 28, 16, '#3B82F6');
+  s += txt(76, y + 36, 'ORGANIZED FREIGHT', { size: 9, weight: 700, fill: '#94A3B8', ls: 1 });
   s += txt(52, y + 60, 'LoadTimeline Report', { size: 18, weight: 700, fill: C.white });
   s += txt(52, y + 80, 'If It Happened, Prove It.', { size: 11, weight: 600, fill: '#60A5FA' });
 

@@ -9,12 +9,11 @@ import { useSettings } from '@/store/settings';
 import { FREE_LOAD_LIMIT, PRO_PRICE } from '@/lib/limits';
 
 const PRO_FEATURES = [
-  'Unlimited loads',
-  'Unlimited reports',
-  'Advanced analytics',
-  'Premium report templates',
-  'Full photo galleries in reports',
-  'All future premium features',
+  'Unlimited loads — no 25-load cap',
+  'Every current feature stays free & unlocked',
+  'One-time purchase, no subscription',
+  'Your data stays on your device',
+  'Supports future premium features',
 ];
 
 export default function Paywall() {

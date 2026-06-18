@@ -46,7 +46,6 @@ export const DEFAULT_REPORT_FIELDS: ReportFields = {
 };
 
 interface ReportOptions {
-  premium?: boolean;
   stops?: ReportStops;
   fields?: Partial<ReportFields>;
 }
@@ -176,7 +175,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     : '<div class="muted">No incidents recorded for this load.</div>';
 
   const allPhotos = listPhotosForLoad(loadId);
-  const galleryHtml = opts.premium && allPhotos.length
+  const galleryHtml = allPhotos.length
     ? `<div class="section"><h2>Photo Evidence</h2><div class="gallery">${allPhotos
         .map((p) => {
           const data = toDataUri(p.uri) ?? toDataUri(p.thumbUri);
@@ -186,7 +185,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     : '';
 
   const scopeLabel = stops === 'both' ? 'Pickup & Delivery' : stops === 'pickup' ? 'Pickup only' : 'Delivery only';
-  const tplLabel = `${opts.premium ? 'Premium Report' : 'Standard Report'} · ${scopeLabel}`;
+  const tplLabel = scopeLabel;
 
   return `<!DOCTYPE html>
 <html>
@@ -197,6 +196,10 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   * { box-sizing: border-box; }
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #111827; margin: 0; padding: 0 28px 40px; }
   .header { background: ${brand.navy}; color: #F8FAFC; margin: 0 -28px 24px; padding: 28px; }
+  .brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .of-mark { display: grid; grid-template-columns: 9px 9px; grid-gap: 3px; }
+  .of-mark span { width: 9px; height: 9px; border-radius: 2px; background: ${brand.accent}; display: block; }
+  .of-mark span.dim { opacity: 0.55; }
   .brand { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #94A3B8; }
   .app { font-size: 26px; font-weight: 800; margin: 4px 0 2px; }
   .tagline { font-size: 13px; color: ${accent === brand.accent ? '#60A5FA' : '#60A5FA'}; font-weight: 600; }
@@ -247,7 +250,10 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 </head>
 <body>
   <div class="header">
-    <div class="brand">Organized Freight</div>
+    <div class="brandrow">
+      <div class="of-mark"><span></span><span class="dim"></span><span class="dim"></span><span></span></div>
+      <div class="brand">Organized Freight</div>
+    </div>
     <div class="app">LoadTimeline</div>
     <div class="tagline">If It Happened, Prove It.</div>
     <div class="doc-title">${esc(title)}</div>

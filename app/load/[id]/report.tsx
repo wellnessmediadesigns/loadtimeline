@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppHeader, Button, Card, Chip, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
@@ -30,9 +30,8 @@ const FIELD_OPTIONS: { key: keyof ReportFields; label: string }[] = [
 
 export default function ReportScreen() {
   const t = useTheme();
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { isPro, incrementReports } = useSettings();
+  const { incrementReports } = useSettings();
 
   const load = id ? getLoad(id) : null;
   const events = id ? listEvents(id) : [];
@@ -56,7 +55,7 @@ export default function ReportScreen() {
   const run = async (mode: 'share' | 'print') => {
     setBusy(mode);
     try {
-      const opts = { premium: isPro, stops, fields };
+      const opts = { stops, fields };
       if (mode === 'share') await shareReport(load.id, opts);
       else await printReport(load.id, opts);
       incrementReports();
@@ -77,7 +76,7 @@ export default function ReportScreen() {
     { icon: 'navigate', label: 'GPS & arrival/departure records', ok: shownEvents.some((e) => e.latitude != null) },
     { icon: 'time', label: `Detention summary · ${formatDuration(onSiteMs)} on site`, ok: onSiteMs != null },
     { icon: 'warning', label: `Incident log · ${incidents.length}`, ok: incidents.length > 0 },
-    { icon: 'images', label: `Photos · ${photoCount}${isPro ? ' (full gallery)' : ''}`, ok: photoCount > 0 },
+    { icon: 'images', label: `Photos · ${photoCount}`, ok: photoCount > 0 },
   ] as const;
 
   return (
@@ -98,7 +97,7 @@ export default function ReportScreen() {
             <Text style={[t.typography.caption, { color: '#60A5FA' }]}>If It Happened, Prove It.</Text>
           </View>
           <Text style={[t.typography.body, { color: t.colors.textSecondary, textAlign: 'center' }]}>
-            {isPro ? 'Premium report template' : 'Standard report template'}
+            Professional, branded PDF — share, email, print or save.
           </Text>
         </Card>
 
@@ -159,18 +158,6 @@ export default function ReportScreen() {
           ))}
         </Card>
 
-        {!isPro ? (
-          <Card onPress={() => router.push('/paywall')} style={[styles.proCard, { borderColor: t.colors.accent }]}>
-            <Ionicons name="sparkles" size={20} color={t.colors.accent} />
-            <View style={{ flex: 1 }}>
-              <Text style={[t.typography.subtitle, { color: t.colors.text }]}>Unlock premium reports</Text>
-              <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
-                Full photo gallery & premium template with Pro.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={t.colors.textSecondary} />
-          </Card>
-        ) : null}
       </Screen>
     </View>
   );
@@ -183,5 +170,4 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', gap: 8 },
   lockedRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   toggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  proCard: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5 },
 });
