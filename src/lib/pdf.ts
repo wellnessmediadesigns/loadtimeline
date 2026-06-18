@@ -25,13 +25,39 @@ function esc(value: string | null | undefined): string {
     .replace(/"/g, '&quot;');
 }
 
+export type ReportStops = 'pickup' | 'delivery' | 'both';
+
+export interface ReportFields {
+  broker: boolean;
+  customer: boolean;
+  reference: boolean;
+  trailer: boolean;
+  status: boolean;
+  notes: boolean;
+}
+
+export const DEFAULT_REPORT_FIELDS: ReportFields = {
+  broker: true,
+  customer: true,
+  reference: true,
+  trailer: true,
+  status: true,
+  notes: true,
+};
+
 interface ReportOptions {
   premium?: boolean;
+  stops?: ReportStops;
+  fields?: Partial<ReportFields>;
 }
 
 function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const load = getLoad(loadId);
   if (!load) return null;
+
+  const stops = opts.stops ?? 'both';
+  const includeStop = (s: 'pickup' | 'delivery') => stops === 'both' || stops === s;
+  const f: ReportFields = { ...DEFAULT_REPORT_FIELDS, ...opts.fields };
 
   const events = listEvents(loadId);
   const incidents = listIncidents(loadId);
@@ -40,15 +66,17 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const title = load.loadNumber ? `Load ${esc(load.loadNumber)}` : 'Load Documentation';
   const accent = brand.accent;
 
+  // Load Number, Pickup and Delivery are always included; the rest are
+  // optional so a driver can withhold who the customer/broker is.
   const detailRows: [string, string | null][] = [
     ['Load Number', load.loadNumber],
-    ['Broker', load.brokerName],
-    ['Customer', load.customerName],
     ['Pickup', load.pickupLocation],
     ['Delivery', load.deliveryLocation],
-    ['Reference #', load.referenceNumber],
-    ['Trailer #', load.trailerNumber],
-    ['Status', load.status === 'active' ? 'Active' : 'Completed'],
+    ...(f.broker ? ([['Broker', load.brokerName]] as [string, string | null][]) : []),
+    ...(f.customer ? ([['Customer', load.customerName]] as [string, string | null][]) : []),
+    ...(f.reference ? ([['Reference #', load.referenceNumber]] as [string, string | null][]) : []),
+    ...(f.trailer ? ([['Trailer #', load.trailerNumber]] as [string, string | null][]) : []),
+    ...(f.status ? ([['Status', load.status === 'active' ? 'Active' : 'Completed']] as [string, string | null][]) : []),
   ];
   const detailsHtml = detailRows
     .filter(([, v]) => v)
@@ -82,7 +110,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
       </div>`;
   };
 
-  const timelineHtml = STOP_ORDER.map((s) => {
+  const timelineHtml = STOP_ORDER.filter(includeStop).map((s) => {
     const stopEvents = events.filter((e) => e.stop === s);
     if (stopEvents.length === 0) return '';
     const meta = STOP_META[s];
@@ -91,7 +119,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
       <div class="stop-head">${esc(meta.label)}${loc ? ` · ${esc(loc)}` : ''}</div>
       ${stopEvents.map(eventRow).join('')}
     </div>`;
-  }).join('') || '<div class="muted">No events recorded.</div>';
+  }).join('') || '<div class="muted">No events recorded for the selected stops.</div>';
 
   const statCard = (label: string, value: string) =>
     `<div class="stat"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
@@ -109,12 +137,14 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     </div>`;
   };
 
-  const anyDetention = detention.pickup.hasActivity || detention.delivery.hasActivity;
+  const showPickupDet = includeStop('pickup') && detention.pickup.hasActivity;
+  const showDeliveryDet = includeStop('delivery') && detention.delivery.hasActivity;
+  const anyDetention = showPickupDet || showDeliveryDet;
   const detentionHtml = `
-    ${detention.pickup.hasActivity ? stopDetentionHtml(detention.pickup) : ''}
-    ${detention.delivery.hasActivity ? stopDetentionHtml(detention.delivery) : ''}
-    ${anyDetention ? `<div class="combined">Combined on site: <b>${formatDuration(detention.totalOnSiteMs)}</b> · Combined potential detention: <b>${formatDuration(detention.totalPotentialDetentionMs)}</b></div>` : '<div class="muted">No detention data yet.</div>'}
-    <div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>
+    ${showPickupDet ? stopDetentionHtml(detention.pickup) : ''}
+    ${showDeliveryDet ? stopDetentionHtml(detention.delivery) : ''}
+    ${showPickupDet && showDeliveryDet ? `<div class="combined">Combined on site: <b>${formatDuration(detention.totalOnSiteMs)}</b> · Combined potential detention: <b>${formatDuration(detention.totalPotentialDetentionMs)}</b></div>` : ''}
+    ${anyDetention ? `<div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>` : '<div class="muted">No detention data for the selected stops.</div>'}
   `;
 
   const incidentsHtml = incidents.length
@@ -155,7 +185,8 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
         .join('')}</div></div>`
     : '';
 
-  const tplLabel = opts.premium ? 'Premium Report' : 'Standard Report';
+  const scopeLabel = stops === 'both' ? 'Pickup & Delivery' : stops === 'pickup' ? 'Pickup only' : 'Delivery only';
+  const tplLabel = `${opts.premium ? 'Premium Report' : 'Standard Report'} · ${scopeLabel}`;
 
   return `<!DOCTYPE html>
 <html>
@@ -231,7 +262,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 
   <div class="section"><h2>Incident Log</h2>${incidentsHtml}</div>
 
-  ${load.driverNotes ? `<div class="section"><h2>Driver Notes</h2><div class="tl-note">${esc(load.driverNotes)}</div></div>` : ''}
+  ${f.notes && load.driverNotes ? `<div class="section"><h2>Driver Notes</h2><div class="tl-note">${esc(load.driverNotes)}</div></div>` : ''}
 
   ${galleryHtml}
 

@@ -341,29 +341,54 @@ function incidents() {
 }
 
 // ===================== SCREEN 5: REPORT =====================
+function toggle(x, y, on) {
+  const w = 46, h = 28;
+  let s = rect(x, y, w, h, 14, on ? C.accent : '#CBD5E1');
+  s += `<circle cx="${on ? x + w - 14 : x + 14}" cy="${y + h / 2}" r="11" fill="#fff"/>`;
+  return s;
+}
+
 function report() {
   let s = header('Generate Report', 'Load 48213');
-  // hero card with navy badge
-  let y = 104;
-  s += card(20, y, W - 40, 150);
-  s += rect(36, y + 16, W - 72, 92, 16, C.navy);
-  s += txt(52, y + 40, 'ORGANIZED FREIGHT', { size: 10, weight: 700, fill: '#94A3B8', ls: 1 });
-  s += txt(52, y + 66, 'LoadTimeline Report', { size: 20, weight: 700, fill: C.white });
-  s += txt(52, y + 88, 'If It Happened, Prove It.', { size: 12, weight: 600, fill: '#60A5FA' });
-  s += txt(W / 2, y + 134, 'Premium report template', { size: 13, weight: 500, fill: C.sec, anchor: 'middle' });
+  // compact hero
+  let y = 100;
+  s += card(20, 100, W - 40, 116);
+  s += rect(36, y + 14, W - 72, 88, 14, C.navy);
+  s += txt(52, y + 36, 'ORGANIZED FREIGHT', { size: 9, weight: 700, fill: '#94A3B8', ls: 1 });
+  s += txt(52, y + 60, 'LoadTimeline Report', { size: 18, weight: 700, fill: C.white });
+  s += txt(52, y + 80, 'If It Happened, Prove It.', { size: 11, weight: 600, fill: '#60A5FA' });
 
-  // includes card
-  let iy = y + 168;
-  s += card(20, iy, W - 40, 300);
-  s += txt(36, iy + 28, 'THIS REPORT INCLUDES', { size: 11, weight: 700, fill: C.sec, ls: 0.5 });
+  // include stops
+  let sy = 232;
+  s += card(20, sy, W - 40, 86);
+  s += txt(36, sy + 26, 'INCLUDE STOPS', { size: 11, weight: 700, fill: C.sec, ls: 0.5 });
+  const stops = [['Both', true], ['Pickup', false], ['Delivery', false]];
+  let cx = 36;
+  stops.forEach((st) => {
+    const tw = 26 + st[0].length * 8.5;
+    s += rect(cx, sy + 42, tw, 32, 16, st[1] ? C.accent : C.card, { stroke: st[1] ? C.accent : C.border });
+    s += txt(cx + tw / 2, sy + 63, st[0], { size: 13, weight: 600, fill: st[1] ? C.white : C.text, anchor: 'middle' });
+    cx += tw + 10;
+  });
+
+  // load details to show
+  let dy = 334;
   const rows = [
-    'Load details', 'Timeline · 5 events', 'GPS & arrival/departure records',
-    'Detention summary · 6h 51m on site', 'Incident log · 1', 'Photos · 6 (full gallery)',
+    ['Broker name', true], ['Customer name', false], ['Reference number', true],
+    ['Trailer number', true], ['Driver notes', false],
   ];
+  const cardH = 50 + 36 + rows.length * 40 + 16;
+  s += card(20, dy, W - 40, cardH);
+  s += txt(36, dy + 26, 'LOAD DETAILS TO SHOW', { size: 11, weight: 700, fill: C.sec, ls: 0.5 });
+  // locked row
+  s += icon(44, dy + 56, 'lock-closed', 15, C.sec);
+  s += txt(60, dy + 60, 'Load #, Pickup & Delivery — always included', { size: 12, weight: 500, fill: C.sec });
+  s += `<line x1="36" y1="${dy + 74}" x2="${W - 36}" y2="${dy + 74}" stroke="${C.border}" stroke-width="1"/>`;
   rows.forEach((r, i) => {
-    const ry = iy + 58 + i * 40;
-    s += icon(44, ry, 'checkmark-circle', 20, C.success);
-    s += txt(64, ry + 5, r, { size: 14, weight: 500 });
+    const ry = dy + 74 + 30 + i * 40;
+    s += txt(36, ry + 4, r[0], { size: 14, weight: 500 });
+    s += toggle(W - 36 - 46, ry - 14, r[1]);
+    if (i < rows.length - 1) s += `<line x1="36" y1="${ry + 18}" x2="${W - 36}" y2="${ry + 18}" stroke="${C.border}" stroke-width="1"/>`;
   });
 
   // share + print buttons
