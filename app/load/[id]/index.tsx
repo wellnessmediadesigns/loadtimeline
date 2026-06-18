@@ -22,7 +22,7 @@ import { listIncidents } from '@/db/queries/incidents';
 import { listPhotos } from '@/db/queries/photos';
 import { captureGeo } from '@/lib/gps';
 import { computeDetention, detentionLevel, onSiteLevel } from '@/lib/detention';
-import { formatDuration } from '@/lib/format';
+import { formatDuration, detentionText } from '@/lib/format';
 import { eventsForStop, STOP_META, STOP_ORDER } from '@/types/catalog';
 import type { EventType, Incident, Load, LoadEvent, Photo, StopType } from '@/types';
 
@@ -186,11 +186,14 @@ export default function ActiveLoad() {
           <StatCard label="Time On Site" value={formatDuration(stopDet.onSiteMs)} icon="time" level={onSiteLevel(stopDet.onSiteMs)} hint={stopDet.ongoing ? 'On site now' : undefined} />
           <StatCard label="Wait Time" value={formatDuration(stopDet.waitMs)} icon="hourglass" level={onSiteLevel(stopDet.waitMs)} />
           <StatCard label={STOP_META[stop].serviceLabel} value={formatDuration(stopDet.serviceMs)} icon={stop === 'pickup' ? 'cube' : 'file-tray-full'} />
-          <StatCard label="Potential Detention" value={formatDuration(stopDet.potentialDetentionMs)} icon="alert-circle" level={detentionLevel(stopDet.potentialDetentionMs)} hint={`after ${stopDet.freeMinutes / 60}h free`} />
+          <StatCard label="Potential Detention" value={detentionText(stopDet.potentialDetentionMs)} icon="alert-circle" level={detentionLevel(stopDet.potentialDetentionMs)} hint={`after ${stopDet.freeMinutes / 60}h free`} />
         </View>
         {detention.totalOnSiteMs != null ? (
           <Text style={[t.typography.caption, { color: t.colors.textSecondary, marginTop: 10 }]}>
-            Combined on site (both stops): {formatDuration(detention.totalOnSiteMs)} · Potential detention: {formatDuration(detention.totalPotentialDetentionMs)}
+            Combined on site (both stops): {formatDuration(detention.totalOnSiteMs)}
+            {detention.totalPotentialDetentionMs && detention.totalPotentialDetentionMs > 0
+              ? ` · Potential detention: ${formatDuration(detention.totalPotentialDetentionMs)}`
+              : ' · No detention incurred'}
           </Text>
         ) : null}
 

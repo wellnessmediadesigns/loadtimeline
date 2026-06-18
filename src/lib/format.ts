@@ -41,6 +41,11 @@ export function formatDuration(ms: number | null | undefined): string {
   return `${h}h ${m}m`;
 }
 
+/** Detention/duration value for display: a duration when positive, else "None". */
+export function detentionText(ms: number | null | undefined): string {
+  return ms != null && ms > 0 ? formatDuration(ms) : 'None';
+}
+
 /** Compact decimal hours, e.g. 2.5 -> "2.5h". */
 export function formatHours(hours: number): string {
   return `${Math.round(hours * 10) / 10}h`;

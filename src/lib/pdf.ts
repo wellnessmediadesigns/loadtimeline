@@ -7,7 +7,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { brand } from '@/theme/colors';
 import { computeDetention, detentionLevel, DetentionLevel, onSiteLevel, StopDetention } from './detention';
-import { formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
+import { detentionText, formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
 import { toDataUri } from './photos';
 import { EVENT_META, INCIDENT_META, SEVERITY_LABEL, STOP_META, STOP_ORDER } from '@/types/catalog';
 import type { LoadEvent } from '@/types';
@@ -129,8 +129,6 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const statCard = (label: string, value: string, level?: DetentionLevel) =>
     `<div class="stat${level ? ` lvl-${level}` : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
 
-  const detentionValue = (ms: number) => (ms > 0 ? formatDuration(ms) : 'None');
-
   const stopDetentionHtml = (sd: StopDetention) => {
     const meta = STOP_META[sd.stop];
     return `<div class="stop-group">
@@ -139,7 +137,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
         ${statCard('Time On Site', formatDuration(sd.onSiteMs), onSiteLevel(sd.onSiteMs))}
         ${statCard('Wait Time', formatDuration(sd.waitMs), onSiteLevel(sd.waitMs))}
         ${statCard(meta.serviceLabel, formatDuration(sd.serviceMs))}
-        ${statCard('Potential Detention', detentionValue(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs))}
+        ${statCard('Potential Detention', detentionText(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs))}
       </div></div>
     </div>`;
   };
@@ -174,7 +172,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
         <div class="stats">
           ${statCard('Total Trip', formatDuration(tripMs))}
           ${statCard('On Site', formatDuration(tripOnSiteMs), onSiteLevel(tripOnSiteMs))}
-          ${statCard('Potential Detention', detentionValue(scopedDetentionMs), detentionLevel(scopedDetentionMs))}
+          ${statCard('Potential Detention', detentionText(scopedDetentionMs), detentionLevel(scopedDetentionMs))}
         </div>
         <div class="trip-sub">Arrived ${esc(formatDateTime(tripStart))} ${tripOngoing ? '· on site now' : `→ Departed ${esc(formatDateTime(tripEnd))}`}</div>
       </div>`
