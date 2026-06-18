@@ -374,44 +374,65 @@ function report() {
   return frame(s);
 }
 
+// Vertical bar chart inside a card.
+function barChartCard(x, y, w, title, labels, values, color, fmt, hi) {
+  const plotH = 104, cardH = 30 + plotH + 38;
+  let s = card(x, y, w, cardH);
+  s += txt(x + 16, y + 26, title, { size: 11, weight: 700, fill: C.sec, ls: 0.5 });
+  const innerX = x + 16, innerW = w - 32, n = values.length, colW = innerW / n;
+  const max = Math.max(...values, 1);
+  const baseY = y + 30 + plotH;
+  values.forEach((v, i) => {
+    const bh = Math.max(v > 0 ? 6 : 3, Math.round((v / max) * plotH));
+    const cx = innerX + colW * i + colW / 2, bw = colW * 0.46;
+    const fill = v === 0 ? C.border : (hi && hi(v) ? C.danger : color);
+    s += rect(cx - bw / 2, baseY - bh, bw, bh, 5, fill);
+    if (v > 0) s += txt(cx, baseY - bh - 6, fmt(v), { size: 9, weight: 700, fill: C.sec, anchor: 'middle' });
+    s += txt(cx, baseY + 18, labels[i], { size: 9, weight: 600, fill: C.sec, anchor: 'middle' });
+  });
+  return { svg: s, bottom: y + cardH };
+}
+
 // ===================== SCREEN 6: ANALYTICS =====================
 function analytics() {
   let s = '';
-  let y = 70;
+  let y = 64;
   s += txt(20, y + 22, 'Analytics', { size: 30, weight: 800 });
   s += txt(20, y + 46, 'Your documentation at a glance.', { size: 14, weight: 500, fill: C.sec });
 
-  const gx = 20, gw = (W - 40 - 10) / 2, gh = 88;
+  const gx = 20, gw = (W - 40 - 10) / 2, gh = 84;
   const stats = [
     ['Loads Logged', '15', 'cube', C.accent, C.accentSoft],
     ['Hours Detained', '3.2h', 'hourglass', C.danger, C.dangerSoft],
     ['Incidents', '2', 'warning', C.warning, C.warningSoft],
-    ['Reports', '7', 'document-text', C.accent, C.accentSoft],
     ['Avg Facility Time', '3h 18m', 'time', C.accent, C.accentSoft],
-    ['Top Delay', 'Detention', 'alert-circle', C.warning, C.warningSoft],
   ];
-  let sy = y + 70;
+  let sy = y + 66;
   stats.forEach((st, i) => {
     const col = i % 2, row = Math.floor(i / 2);
     s += statCard(gx + col * (gw + 10), sy + row * (gh + 10), gw, gh, st[0], st[1], { icon: st[2], fg: st[3], bg: st[4] });
   });
 
-  // incidents by type bar chart
-  let by = sy + 3 * (gh + 10) + 14;
-  s += overline(20, by, 'Incidents by Type');
-  s += card(20, by + 14, W - 40, 230);
-  const bars = [
-    ['Damaged Freight', 5], ['Detention', 4], ['Seal Issue', 3], ['Lumper Fee', 2], ['Shortage', 1],
-  ];
-  const max = 5;
-  bars.forEach((b, i) => {
-    const ry = by + 50 + i * 38;
-    s += txt(40, ry + 4, b[0], { size: 12, weight: 600 });
-    const trackX = 190, trackW = W - 40 - 190 - 40;
-    s += rect(trackX, ry - 6, trackW, 10, 5, C.cardAlt);
-    s += rect(trackX, ry - 6, trackW * (b[1] / max), 10, 5, C.accent);
-    s += txt(W - 40, ry + 4, String(b[1]), { size: 13, weight: 700, anchor: 'end' });
-  });
+  let ty = sy + 2 * (gh + 10) + 8;
+  s += overline(20, ty, 'Trends · Pro');
+  const weeks = ['4/27', '5/4', '5/11', '5/18', '5/25', '6/1', '6/8', '6/15'];
+  const g1 = barChartCard(20, ty + 12, W - 40, 'LOADS PER WEEK', weeks, [2, 4, 3, 5, 2, 6, 4, 5], C.accent, (v) => `${v}`);
+  s += g1.svg;
+  const g2 = barChartCard(20, g1.bottom + 12, W - 40, 'DETENTION PER WEEK (HRS)', weeks, [0, 1.5, 0, 3.2, 0, 4.5, 1, 2], C.warning, (v) => `${v}`, (v) => v >= 3);
+  s += g2.svg;
+
+  // on-time split bar
+  const oy = g2.bottom + 12;
+  s += card(20, oy, W - 40, 96);
+  s += txt(36, oy + 26, 'ON-TIME PERFORMANCE', { size: 11, weight: 700, fill: C.sec, ls: 0.5 });
+  s += txt(W - 36, oy + 26, '73% clean', { size: 15, weight: 700, fill: C.warning, anchor: 'end' });
+  const sbX = 36, sbW = W - 72, clean = 11, det = 4, tot = clean + det;
+  s += rect(sbX, oy + 42, sbW * (clean / tot), 14, 0, C.success);
+  s += rect(sbX + sbW * (clean / tot), oy + 42, sbW * (det / tot), 14, 0, C.danger);
+  s += `<circle cx="${sbX + 5}" cy="${oy + 76}" r="5" fill="${C.success}"/>`;
+  s += txt(sbX + 16, oy + 80, 'No detention · 11', { size: 11, weight: 600 });
+  s += `<circle cx="${sbX + 150}" cy="${oy + 76}" r="5" fill="${C.danger}"/>`;
+  s += txt(sbX + 161, oy + 80, 'Detained · 4', { size: 11, weight: 600 });
   return frame(s);
 }
 

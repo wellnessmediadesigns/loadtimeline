@@ -1,4 +1,5 @@
 export { AppHeader } from './AppHeader';
+export { BarChart } from './BarChart';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Chip } from './Chip';
@@ -8,6 +9,7 @@ export { Field } from './Field';
 export { IncidentRow } from './IncidentRow';
 export { LoadCard } from './LoadCard';
 export { PhotoGrid } from './PhotoGrid';
+export { ProLock } from './ProLock';
 export { Screen } from './Screen';
 export { SectionTitle } from './SectionTitle';
 export { SeverityBadge } from './SeverityBadge';
