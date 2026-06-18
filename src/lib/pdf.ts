@@ -196,10 +196,13 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   * { box-sizing: border-box; }
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #111827; margin: 0; padding: 0 28px 40px; }
   .header { background: ${brand.navy}; color: #F8FAFC; margin: 0 -28px 24px; padding: 28px; }
-  .brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-  .of-mark { display: grid; grid-template-columns: 9px 9px; grid-gap: 3px; }
-  .of-mark span { width: 9px; height: 9px; border-radius: 2px; background: ${brand.accent}; display: block; }
-  .of-mark span.dim { opacity: 0.55; }
+  .brandrow { display: flex; align-items: center; gap: 9px; margin-bottom: 2px; }
+  .of-mark { display: flex; flex-direction: column; gap: 3px; }
+  .of-mark .ofr { display: flex; gap: 3px; }
+  .of-mark .sq { width: 9px; height: 9px; border-radius: 2px; }
+  .of-mark .bar { width: 21px; height: 9px; border-radius: 2px; }
+  .of-mark .blue { background: #4773D6; }
+  .of-mark .cyan { background: #5BC8E8; }
   .brand { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #94A3B8; }
   .app { font-size: 26px; font-weight: 800; margin: 4px 0 2px; }
   .tagline { font-size: 13px; color: ${accent === brand.accent ? '#60A5FA' : '#60A5FA'}; font-weight: 600; }
@@ -251,7 +254,11 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 <body>
   <div class="header">
     <div class="brandrow">
-      <div class="of-mark"><span></span><span class="dim"></span><span class="dim"></span><span></span></div>
+      <div class="of-mark">
+        <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
+        <div class="ofr"><span class="bar cyan"></span><span class="sq blue"></span></div>
+        <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
+      </div>
       <div class="brand">Organized Freight</div>
     </div>
     <div class="app">LoadTimeline</div>

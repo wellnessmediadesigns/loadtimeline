@@ -74,13 +74,18 @@ function frame(inner, bg = C.bg, dark = true) {
 
 function overline(x, y, s) { return txt(x, y, s.toUpperCase(), { size: 11, weight: 700, fill: C.sec, ls: 1.2 }); }
 
-// Organized Freight blocks mark (2x2 rounded squares).
-function ofMark(x, y, size, accent) {
-  const a = accent || C.accent;
-  const gap = size * 0.12, cell = (size - gap) / 2, r = cell * 0.3;
-  const pos = [[0, 0, 1], [1, 0, 0.55], [0, 1, 0.55], [1, 1, 1]];
+// Organized Freight stacked-freight mark (3 rows: square + bar, alternating).
+const OF_CYAN = '#5BC8E8', OF_BLUE = '#4773D6';
+function ofMark(x, y, size) {
+  const u = size / 3.36, g = u * 0.18, r = u * 0.28, bar = 2 * u + g;
+  const rowY = (i) => y + i * (u + g);
   let s = '';
-  for (const [cx, cy, op] of pos) s += rect(x + cx * (cell + gap), y + cy * (cell + gap), cell, cell, r, a, { opacity: op });
+  s += rect(x, rowY(0), u, u, r, OF_BLUE);
+  s += rect(x + u + g, rowY(0), bar, u, r, OF_CYAN);
+  s += rect(x, rowY(1), bar, u, r, OF_CYAN);
+  s += rect(x + 2 * u + 2 * g, rowY(1), u, u, r, OF_BLUE);
+  s += rect(x, rowY(2), u, u, r, OF_BLUE);
+  s += rect(x + u + g, rowY(2), bar, u, r, OF_CYAN);
   return s;
 }
 

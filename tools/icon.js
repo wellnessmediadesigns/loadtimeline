@@ -6,58 +6,59 @@ function crc(buf) { let c = ~0; for (let i = 0; i < buf.length; i++) { c ^= buf[
 function chunk(type, data) { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const cb = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(cb) >>> 0); return Buffer.concat([len, cb, c]); }
 
 const NAVY = [15, 23, 42];
-const ACCENT = [37, 99, 235];
-function blend(a, b, t) { return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)]; }
-const DIM = blend(NAVY, ACCENT, 0.55);
+const CYAN = [91, 200, 232];
+const BLUE = [71, 115, 214];
 
 function makePng(size, bg, transparent) {
   const channels = transparent ? 4 : 3;
   const colorType = transparent ? 6 : 2;
   const px = Buffer.alloc(size * size * channels);
-  // fill background
   for (let i = 0; i < size * size; i++) {
     const o = i * channels;
     if (transparent) { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; px[o + 3] = 0; }
     else { px[o] = bg[0]; px[o + 1] = bg[1]; px[o + 2] = bg[2]; }
   }
 
-  // blocks grid
-  const G = Math.round(size * 0.5);
-  const gap = Math.round(size * 0.045);
-  const cell = Math.round((G - gap) / 2);
-  const radius = Math.round(cell * 0.28);
+  // Stacked-freight mark: total = 3u + 2g (square), bar = 2u + g.
+  const G = Math.round(size * 0.52);
+  const u = G / 3.36;
+  const gap = u * 0.18;
+  const radius = Math.round(u * 0.28);
   const ox = Math.round((size - G) / 2);
   const oy = Math.round((size - G) / 2);
-  const cells = [
-    { x: ox, y: oy, c: ACCENT },
-    { x: ox + cell + gap, y: oy, c: DIM },
-    { x: ox, y: oy + cell + gap, c: DIM },
-    { x: ox + cell + gap, y: oy + cell + gap, c: ACCENT },
+  const bar = 2 * u + gap;
+  const rowY = (i) => oy + Math.round(i * (u + gap));
+  const blocks = [
+    [ox, rowY(0), u, BLUE],
+    [ox + u + gap, rowY(0), bar, CYAN],
+    [ox, rowY(1), bar, CYAN],
+    [ox + 2 * u + 2 * gap, rowY(1), u, BLUE],
+    [ox, rowY(2), u, BLUE],
+    [ox + u + gap, rowY(2), bar, CYAN],
   ];
 
-  const inRounded = (lx, ly) => {
-    // rounded-rect hit test within a cell of width/height = cell
-    if (lx >= radius && lx < cell - radius) return true;
-    if (ly >= radius && ly < cell - radius) return true;
-    const cornersX = lx < radius ? radius : cell - radius - 1;
-    const cornersY = ly < radius ? radius : cell - radius - 1;
-    const dx = lx - cornersX, dy = ly - cornersY;
-    return dx * dx + dy * dy <= radius * radius;
-  };
-
-  for (const cl of cells) {
-    for (let y = 0; y < cell; y++) {
-      for (let x = 0; x < cell; x++) {
-        if (!inRounded(x, y)) continue;
-        const px_x = cl.x + x, px_y = cl.y + y;
+  const drawRoundRect = (bx, by, bw, bh, rad, color) => {
+    bx = Math.round(bx); by = Math.round(by); bw = Math.round(bw); bh = Math.round(bh);
+    for (let y = 0; y < bh; y++) {
+      for (let x = 0; x < bw; x++) {
+        // rounded-corner test
+        let inside = true;
+        if (x < rad && y < rad) inside = (rad - x) ** 2 + (rad - y) ** 2 <= rad * rad;
+        else if (x >= bw - rad && y < rad) inside = (x - (bw - rad - 1)) ** 2 + (rad - y) ** 2 <= rad * rad;
+        else if (x < rad && y >= bh - rad) inside = (rad - x) ** 2 + (y - (bh - rad - 1)) ** 2 <= rad * rad;
+        else if (x >= bw - rad && y >= bh - rad) inside = (x - (bw - rad - 1)) ** 2 + (y - (bh - rad - 1)) ** 2 <= rad * rad;
+        if (!inside) continue;
+        const px_x = bx + x, px_y = by + y;
+        if (px_x < 0 || px_y < 0 || px_x >= size || px_y >= size) continue;
         const o = (px_y * size + px_x) * channels;
-        px[o] = cl.c[0]; px[o + 1] = cl.c[1]; px[o + 2] = cl.c[2];
+        px[o] = color[0]; px[o + 1] = color[1]; px[o + 2] = color[2];
         if (transparent) px[o + 3] = 255;
       }
     }
-  }
+  };
 
-  // add filter byte 0 per row
+  for (const [bx, by, bw, color] of blocks) drawRoundRect(bx, by, bw, u, radius, color);
+
   const stride = size * channels;
   const raw = Buffer.alloc((stride + 1) * size);
   for (let y = 0; y < size; y++) { raw[y * (stride + 1)] = 0; px.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride); }
