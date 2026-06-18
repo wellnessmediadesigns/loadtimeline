@@ -27,6 +27,8 @@ export function Screen({ children, scroll = true, padded = true, contentStyle, f
             contentStyle,
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
         >
           {children}

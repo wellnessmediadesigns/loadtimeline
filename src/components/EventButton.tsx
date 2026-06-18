@@ -59,9 +59,8 @@ export function EventButton({ meta, onPress, recorded, loading, disabled }: Even
 
 const styles = StyleSheet.create({
   btn: {
-    flex: 1,
-    minWidth: 150,
-    minHeight: 110,
+    width: '48.5%',
+    height: 116,
     borderWidth: 1.5,
     padding: 14,
     justifyContent: 'center',

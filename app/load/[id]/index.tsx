@@ -167,7 +167,7 @@ export default function ActiveLoad() {
         ) : null}
 
         <SectionTitle title={`Record ${STOP_META[stop].label} Event`} style={{ marginTop: 16 }} />
-        <View style={styles.grid}>
+        <View style={styles.eventGrid}>
           {eventsForStop(stop).map((meta) => (
             <EventButton
               key={meta.type}
@@ -252,6 +252,7 @@ export default function ActiveLoad() {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  eventGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   hBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   segment: { flexDirection: 'row', borderRadius: 14, padding: 4, borderWidth: 1, gap: 4 },
   segmentBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 10 },
