@@ -40,6 +40,8 @@ export interface Load {
   referenceNumber: string | null;
   trailerNumber: string | null;
   driverNotes: string | null;
+  driverName: string | null;
+  company: string | null;
   status: LoadStatus;
   createdAt: number;
   updatedAt: number;

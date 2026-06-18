@@ -11,6 +11,8 @@ interface LoadRow {
   reference_number: string | null;
   trailer_number: string | null;
   driver_notes: string | null;
+  driver_name: string | null;
+  company: string | null;
   status: LoadStatus;
   created_at: number;
   updated_at: number;
@@ -27,6 +29,8 @@ function mapRow(r: LoadRow): Load {
     referenceNumber: r.reference_number,
     trailerNumber: r.trailer_number,
     driverNotes: r.driver_notes,
+    driverName: r.driver_name,
+    company: r.company,
     status: r.status,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -42,6 +46,8 @@ export interface LoadInput {
   referenceNumber?: string | null;
   trailerNumber?: string | null;
   driverNotes?: string | null;
+  driverName?: string | null;
+  company?: string | null;
 }
 
 export function createLoad(input: LoadInput): Load {
@@ -51,8 +57,8 @@ export function createLoad(input: LoadInput): Load {
   db.runSync(
     `INSERT INTO loads
       (id, load_number, broker_name, customer_name, pickup_location, delivery_location,
-       reference_number, trailer_number, driver_notes, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+       reference_number, trailer_number, driver_notes, driver_name, company, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
     [
       id,
       input.loadNumber ?? null,
@@ -63,6 +69,8 @@ export function createLoad(input: LoadInput): Load {
       input.referenceNumber ?? null,
       input.trailerNumber ?? null,
       input.driverNotes ?? null,
+      input.driverName ?? null,
+      input.company ?? null,
       now,
       now,
     ],
@@ -94,7 +102,7 @@ export function updateLoad(id: string, input: LoadInput): void {
     `UPDATE loads SET
       load_number = ?, broker_name = ?, customer_name = ?, pickup_location = ?,
       delivery_location = ?, reference_number = ?, trailer_number = ?, driver_notes = ?,
-      updated_at = ?
+      driver_name = ?, company = ?, updated_at = ?
      WHERE id = ?`,
     [
       input.loadNumber ?? null,
@@ -105,6 +113,8 @@ export function updateLoad(id: string, input: LoadInput): void {
       input.referenceNumber ?? null,
       input.trailerNumber ?? null,
       input.driverNotes ?? null,
+      input.driverName ?? null,
+      input.company ?? null,
       Date.now(),
       id,
     ],

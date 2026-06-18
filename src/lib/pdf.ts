@@ -6,7 +6,7 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { brand } from '@/theme/colors';
-import { computeDetention, StopDetention } from './detention';
+import { computeDetention, detentionLevel, DetentionLevel, onSiteLevel, StopDetention } from './detention';
 import { formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
 import { toDataUri } from './photos';
 import { EVENT_META, INCIDENT_META, SEVERITY_LABEL, STOP_META, STOP_ORDER } from '@/types/catalog';
@@ -28,6 +28,7 @@ function esc(value: string | null | undefined): string {
 export type ReportStops = 'pickup' | 'delivery' | 'both';
 
 export interface ReportFields {
+  driver: boolean;
   broker: boolean;
   customer: boolean;
   reference: boolean;
@@ -37,6 +38,7 @@ export interface ReportFields {
 }
 
 export const DEFAULT_REPORT_FIELDS: ReportFields = {
+  driver: true,
   broker: true,
   customer: true,
   reference: true,
@@ -48,6 +50,8 @@ export const DEFAULT_REPORT_FIELDS: ReportFields = {
 interface ReportOptions {
   stops?: ReportStops;
   fields?: Partial<ReportFields>;
+  driverName?: string | null;
+  company?: string | null;
 }
 
 function buildHtml(loadId: string, opts: ReportOptions): string | null {
@@ -71,6 +75,8 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     ['Load Number', load.loadNumber],
     ['Pickup', load.pickupLocation],
     ['Delivery', load.deliveryLocation],
+    ...(f.driver ? ([['Driver', opts.driverName ?? null]] as [string, string | null][]) : []),
+    ...(f.driver ? ([['Company', opts.company ?? null]] as [string, string | null][]) : []),
     ...(f.broker ? ([['Broker', load.brokerName]] as [string, string | null][]) : []),
     ...(f.customer ? ([['Customer', load.customerName]] as [string, string | null][]) : []),
     ...(f.reference ? ([['Reference #', load.referenceNumber]] as [string, string | null][]) : []),
@@ -115,36 +121,64 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     const meta = STOP_META[s];
     const loc = s === 'pickup' ? load.pickupLocation : load.deliveryLocation;
     return `<div class="stop-group">
-      <div class="stop-head">${esc(meta.label)}${loc ? ` · ${esc(loc)}` : ''}</div>
-      ${stopEvents.map(eventRow).join('')}
+      <div class="stop-head">${esc(meta.label)}${loc ? ` — ${esc(loc)}` : ''}</div>
+      <div class="stop-body">${stopEvents.map(eventRow).join('')}</div>
     </div>`;
   }).join('') || '<div class="muted">No events recorded for the selected stops.</div>';
 
-  const statCard = (label: string, value: string) =>
-    `<div class="stat"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
+  const statCard = (label: string, value: string, level?: DetentionLevel) =>
+    `<div class="stat${level ? ` lvl-${level}` : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
+
+  const detentionValue = (ms: number) => (ms > 0 ? formatDuration(ms) : 'None');
 
   const stopDetentionHtml = (sd: StopDetention) => {
     const meta = STOP_META[sd.stop];
     return `<div class="stop-group">
       <div class="stop-head">${esc(meta.label)}</div>
-      <div class="stats">
-        ${statCard('Time On Site', formatDuration(sd.onSiteMs))}
-        ${statCard('Wait Time', formatDuration(sd.waitMs))}
+      <div class="stop-body"><div class="stats">
+        ${statCard('Time On Site', formatDuration(sd.onSiteMs), onSiteLevel(sd.onSiteMs))}
+        ${statCard('Wait Time', formatDuration(sd.waitMs), onSiteLevel(sd.waitMs))}
         ${statCard(meta.serviceLabel, formatDuration(sd.serviceMs))}
-        ${statCard('Potential Detention', formatDuration(sd.potentialDetentionMs))}
-      </div>
+        ${statCard('Potential Detention', detentionValue(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs))}
+      </div></div>
     </div>`;
   };
 
   const showPickupDet = includeStop('pickup') && detention.pickup.hasActivity;
   const showDeliveryDet = includeStop('delivery') && detention.delivery.hasActivity;
   const anyDetention = showPickupDet || showDeliveryDet;
+  // Combined totals scoped to the included stops.
+  const scopedDetentionMs =
+    (showPickupDet ? detention.pickup.potentialDetentionMs : 0) +
+    (showDeliveryDet ? detention.delivery.potentialDetentionMs : 0);
   const detentionHtml = `
     ${showPickupDet ? stopDetentionHtml(detention.pickup) : ''}
     ${showDeliveryDet ? stopDetentionHtml(detention.delivery) : ''}
-    ${showPickupDet && showDeliveryDet ? `<div class="combined">Combined on site: <b>${formatDuration(detention.totalOnSiteMs)}</b> · Combined potential detention: <b>${formatDuration(detention.totalPotentialDetentionMs)}</b></div>` : ''}
+    ${showPickupDet && showDeliveryDet ? `<div class="combined">${scopedDetentionMs > 0 ? `Combined potential detention: <b>${formatDuration(scopedDetentionMs)}</b>` : '<b>No detention incurred</b> across either stop.'}</div>` : ''}
     ${anyDetention ? `<div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>` : '<div class="muted">No detention data for the selected stops.</div>'}
   `;
+
+  // Trip summary band (page 1): first included-stop arrival -> last departure.
+  const includedStops = STOP_ORDER.filter(includeStop).map((s) => (s === 'pickup' ? detention.pickup : detention.delivery));
+  const arrivals = includedStops.map((sd) => sd.arrivedAt).filter((v): v is number => v != null);
+  const departures = includedStops.map((sd) => sd.departedAt).filter((v): v is number => v != null);
+  const tripOngoing = includedStops.some((sd) => sd.ongoing);
+  const tripStart = arrivals.length ? Math.min(...arrivals) : null;
+  const tripEnd = tripOngoing || departures.length === 0 ? Date.now() : Math.max(...departures);
+  const tripMs = tripStart != null ? Math.max(0, tripEnd - tripStart) : null;
+  const tripOnSiteMs =
+    (showPickupDet ? detention.pickup.onSiteMs ?? 0 : 0) + (showDeliveryDet ? detention.delivery.onSiteMs ?? 0 : 0);
+
+  const tripBandHtml = tripStart != null
+    ? `<div class="tripband">
+        <div class="stats">
+          ${statCard('Total Trip', formatDuration(tripMs))}
+          ${statCard('On Site', formatDuration(tripOnSiteMs), onSiteLevel(tripOnSiteMs))}
+          ${statCard('Potential Detention', detentionValue(scopedDetentionMs), detentionLevel(scopedDetentionMs))}
+        </div>
+        <div class="trip-sub">Arrived ${esc(formatDateTime(tripStart))} ${tripOngoing ? '· on site now' : `→ Departed ${esc(formatDateTime(tripEnd))}`}</div>
+      </div>`
+    : '';
 
   const incidentsHtml = incidents.length
     ? incidents
@@ -162,7 +196,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
             <div class="incident sev-${esc(i.severity)}">
               <div class="incident-head">
                 <span class="incident-title">${esc(i.title || meta?.label || 'Incident')}</span>
-                <span class="badge badge-${esc(i.severity)}">${esc(SEVERITY_LABEL[i.severity])}</span>
+                <span class="badge badge-${esc(i.severity)}">● ${esc(SEVERITY_LABEL[i.severity])}</span>
               </div>
               <div class="incident-meta">${esc(meta?.label ?? i.type)} · ${esc(formatDateTime(i.timestamp))}</div>
               ${i.address ? `<div class="tl-sub">${esc(i.address)}</div>` : ''}
@@ -175,14 +209,15 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     : '<div class="muted">No incidents recorded for this load.</div>';
 
   const allPhotos = listPhotosForLoad(loadId);
-  const galleryHtml = allPhotos.length
-    ? `<div class="section"><h2>Photo Evidence</h2><div class="gallery">${allPhotos
+  const galleryInner = allPhotos.length
+    ? `<div class="gallery">${allPhotos
         .map((p) => {
           const data = toDataUri(p.uri) ?? toDataUri(p.thumbUri);
           return data ? `<img class="gal" src="${data}" />` : '';
         })
-        .join('')}</div></div>`
-    : '';
+        .join('')}</div>`
+    : '<div class="muted">No photos captured.</div>';
+  const galleryHtml = `<div class="section"><h2>Photo Evidence</h2>${galleryInner}</div>`;
 
   const scopeLabel = stops === 'both' ? 'Pickup & Delivery' : stops === 'pickup' ? 'Pickup only' : 'Delivery only';
   const tplLabel = scopeLabel;
@@ -215,11 +250,20 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   td.k { color: #6B7280; width: 140px; font-weight: 600; }
   td.v { color: #111827; font-weight: 600; }
   .stats { display: flex; flex-wrap: wrap; gap: 10px; }
-  .stat { border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; min-width: 120px; flex: 1; }
+  .stat { border: 1px solid #E5E7EB; border-left: 4px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; min-width: 120px; flex: 1; }
   .stat-v { font-size: 20px; font-weight: 800; }
   .stat-l { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-  .stop-group { margin-bottom: 16px; page-break-inside: avoid; }
-  .stop-head { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: ${brand.navy}; background: #F1F5F9; border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; }
+  .stat.lvl-normal { border-left-color: ${brand.success}; }
+  .stat.lvl-normal .stat-v { color: ${brand.success}; }
+  .stat.lvl-watch { border-left-color: ${brand.warning}; }
+  .stat.lvl-watch .stat-v { color: ${brand.warning}; }
+  .stat.lvl-significant { border-left-color: ${brand.danger}; }
+  .stat.lvl-significant .stat-v { color: ${brand.danger}; }
+  .tripband { background: #F8FAFC; border: 1px solid #E5E7EB; border-left: 4px solid ${accent}; border-radius: 14px; padding: 16px; }
+  .trip-sub { font-size: 12px; color: #6B7280; margin-top: 10px; font-weight: 600; }
+  .stop-group { margin-bottom: 16px; page-break-inside: avoid; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
+  .stop-head { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #fff; background: ${brand.navy}; border-left: 4px solid ${accent}; padding: 9px 12px; }
+  .stop-body { padding: 6px 14px 10px; }
   .combined { margin-top: 10px; font-size: 13px; color: #111827; }
   .tl-row { display: flex; gap: 12px; padding: 8px 0; border-left: 0; }
   .tl-time { width: 96px; font-size: 13px; font-weight: 700; }
@@ -266,6 +310,8 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     <div class="doc-title">${esc(title)}</div>
     <div class="doc-sub">${tplLabel} · Generated ${esc(formatDateTime(Date.now()))}</div>
   </div>
+
+  ${tripBandHtml ? `<div class="section" style="margin-top:0"><h2>Trip Summary</h2>${tripBandHtml}</div>` : ''}
 
   <div class="section"><h2>Load Details</h2><table>${detailsHtml || '<tr><td class="muted">No load details entered.</td></tr>'}</table></div>
 

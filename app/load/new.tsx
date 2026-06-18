@@ -15,6 +15,8 @@ export default function NewLoad() {
     referenceNumber: '',
     trailerNumber: '',
     driverNotes: '',
+    driverName: '',
+    company: '',
   });
 
   const set = (key: keyof typeof form) => (value: string) =>
@@ -32,6 +34,8 @@ export default function NewLoad() {
       referenceNumber: clean(form.referenceNumber),
       trailerNumber: clean(form.trailerNumber),
       driverNotes: clean(form.driverNotes),
+      driverName: clean(form.driverName),
+      company: clean(form.company),
     });
     router.replace(`/load/${load.id}`);
   };
@@ -50,6 +54,8 @@ export default function NewLoad() {
           <Field label="Delivery Location" value={form.deliveryLocation} onChangeText={set('deliveryLocation')} placeholder="City, ST or facility" autoCapitalize="words" />
           <Field label="Reference Number" value={form.referenceNumber} onChangeText={set('referenceNumber')} placeholder="PO / BOL / PRO" autoCapitalize="characters" />
           <Field label="Trailer Number" value={form.trailerNumber} onChangeText={set('trailerNumber')} placeholder="Trailer #" autoCapitalize="characters" />
+          <Field label="Driver Name" value={form.driverName} onChangeText={set('driverName')} placeholder="Override your profile for this load" autoCapitalize="words" />
+          <Field label="Company" value={form.company} onChangeText={set('company')} placeholder="Override your profile for this load" autoCapitalize="words" />
           <Field label="Driver Notes" value={form.driverNotes} onChangeText={set('driverNotes')} placeholder="Anything to remember about this load" multiline />
         </View>
       </Screen>

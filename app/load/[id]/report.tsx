@@ -20,6 +20,7 @@ const STOP_OPTIONS: { value: ReportStops; label: string }[] = [
 ];
 
 const FIELD_OPTIONS: { key: keyof ReportFields; label: string }[] = [
+  { key: 'driver', label: 'Driver & company' },
   { key: 'broker', label: 'Broker name' },
   { key: 'customer', label: 'Customer name' },
   { key: 'reference', label: 'Reference number' },
@@ -31,7 +32,7 @@ const FIELD_OPTIONS: { key: keyof ReportFields; label: string }[] = [
 export default function ReportScreen() {
   const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { incrementReports } = useSettings();
+  const { incrementReports, profile } = useSettings();
 
   const load = id ? getLoad(id) : null;
   const events = id ? listEvents(id) : [];
@@ -55,7 +56,12 @@ export default function ReportScreen() {
   const run = async (mode: 'share' | 'print') => {
     setBusy(mode);
     try {
-      const opts = { stops, fields };
+      const opts = {
+        stops,
+        fields,
+        driverName: load.driverName || profile.driverName || null,
+        company: load.company || profile.company || null,
+      };
       if (mode === 'share') await shareReport(load.id, opts);
       else await printReport(load.id, opts);
       incrementReports();

@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Chip, Logo, Screen, SectionTitle } from '@/components';
+import { Card, Chip, Field, Logo, Screen, SectionTitle } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings, ThemeMode } from '@/store/settings';
 import { exportBackup, importBackup } from '@/lib/backup';
@@ -19,7 +19,7 @@ export default function Settings() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { themeMode, setThemeMode, isPro, setPro } = useSettings();
+  const { themeMode, setThemeMode, isPro, setPro, profile, setProfile } = useSettings();
   const [busy, setBusy] = useState(false);
 
   const onExport = async () => {
@@ -73,6 +73,16 @@ export default function Settings() {
             <Chip key={opt.mode} label={opt.label} selected={themeMode === opt.mode} onPress={() => setThemeMode(opt.mode)} />
           ))}
         </View>
+      </Card>
+
+      <SectionTitle title="Driver Profile" style={{ marginTop: 24 }} />
+      <Card style={{ gap: 14 }}>
+        <Field label="Driver Name" value={profile.driverName} onChangeText={(v) => setProfile({ driverName: v })} placeholder="Your name" autoCapitalize="words" />
+        <Field label="Company" value={profile.company} onChangeText={(v) => setProfile({ company: v })} placeholder="Carrier / company name" autoCapitalize="words" />
+        <Field label="Phone" value={profile.phone} onChangeText={(v) => setProfile({ phone: v })} placeholder="Contact number" keyboardType="numeric" />
+        <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
+          Added to your reports for a clear audit trail. A load can override this on its own form.
+        </Text>
       </Card>
 
       <SectionTitle title="LoadTimeline Pro" style={{ marginTop: 24 }} />

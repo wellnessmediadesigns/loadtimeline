@@ -391,8 +391,8 @@ function report() {
   // load details to show
   let dy = 334;
   const rows = [
-    ['Broker name', true], ['Customer name', false], ['Reference number', true],
-    ['Trailer number', true], ['Driver notes', false],
+    ['Driver & company', true], ['Broker name', true], ['Customer name', false],
+    ['Reference number', true], ['Trailer number', true], ['Driver notes', false],
   ];
   const cardH = 50 + 36 + rows.length * 40 + 16;
   s += card(20, dy, W - 40, cardH);

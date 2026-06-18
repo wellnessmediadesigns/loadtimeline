@@ -20,6 +20,8 @@ export default function EditLoad() {
     referenceNumber: existing?.referenceNumber ?? '',
     trailerNumber: existing?.trailerNumber ?? '',
     driverNotes: existing?.driverNotes ?? '',
+    driverName: existing?.driverName ?? '',
+    company: existing?.company ?? '',
   });
 
   if (!existing) {
@@ -45,6 +47,8 @@ export default function EditLoad() {
       referenceNumber: clean(form.referenceNumber),
       trailerNumber: clean(form.trailerNumber),
       driverNotes: clean(form.driverNotes),
+      driverName: clean(form.driverName),
+      company: clean(form.company),
     });
     router.back();
   };
@@ -61,6 +65,8 @@ export default function EditLoad() {
           <Field label="Delivery Location" value={form.deliveryLocation} onChangeText={set('deliveryLocation')} autoCapitalize="words" />
           <Field label="Reference Number" value={form.referenceNumber} onChangeText={set('referenceNumber')} autoCapitalize="characters" />
           <Field label="Trailer Number" value={form.trailerNumber} onChangeText={set('trailerNumber')} autoCapitalize="characters" />
+          <Field label="Driver Name" value={form.driverName} onChangeText={set('driverName')} placeholder="Overrides your profile for this load" autoCapitalize="words" />
+          <Field label="Company" value={form.company} onChangeText={set('company')} placeholder="Overrides your profile for this load" autoCapitalize="words" />
           <Field label="Driver Notes" value={form.driverNotes} onChangeText={set('driverNotes')} multiline />
         </View>
       </Screen>

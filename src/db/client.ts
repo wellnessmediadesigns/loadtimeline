@@ -88,6 +88,11 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
     // Existing UNLOADED events belong to the delivery stop.
     d.execSync(`UPDATE events SET stop = 'delivery' WHERE type = 'UNLOADED';`);
   },
+  // v3 — optional per-load driver/company override (falls back to profile)
+  (d) => {
+    d.execSync(`ALTER TABLE loads ADD COLUMN driver_name TEXT;`);
+    d.execSync(`ALTER TABLE loads ADD COLUMN company TEXT;`);
+  },
 ];
 
 /** Applies any pending migrations using PRAGMA user_version. */
