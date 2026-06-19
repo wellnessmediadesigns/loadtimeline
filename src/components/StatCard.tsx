@@ -44,21 +44,29 @@ export function StatCard({ label, value, icon, level = 'normal', tone, hint }: S
   };
   const accent = tone ? accentByTone[tone] : accentByLevel[level];
 
+  // `tone` → tinted card (Home/Analytics); `level` → legacy white card (Load detail).
+  const tinted = !!tone;
+
   return (
     <View
       style={[
         styles.card,
         {
-          backgroundColor: t.colors.card,
+          backgroundColor: tinted ? accent.bg : t.colors.card,
           borderRadius: t.radius.lg,
-          borderColor: t.colors.border,
-          ...t.shadow(2),
+          borderColor: tinted ? `${accent.fg}22` : t.colors.border,
+          ...t.shadow(tinted ? 1 : 2),
         },
       ]}
     >
       {icon ? (
-        <View style={[styles.iconWrap, { backgroundColor: accent.bg }]}>
-          <Ionicons name={icon} size={20} color={accent.fg} />
+        <View
+          style={[
+            styles.iconWrap,
+            { backgroundColor: tinted ? accent.fg : accent.bg },
+          ]}
+        >
+          <Ionicons name={icon} size={20} color={tinted ? t.colors.onAccent : accent.fg} />
         </View>
       ) : null}
       <Text style={[t.typography.display, { color: t.colors.text }]} numberOfLines={1}>

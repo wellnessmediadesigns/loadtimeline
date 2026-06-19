@@ -18,7 +18,7 @@ export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isPro, reportsGenerated } = useSettings();
+  const { isPro, reportsGenerated, profile } = useSettings();
 
   const [active, setActive] = useState<Load[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
@@ -43,6 +43,12 @@ export default function Dashboard() {
         onNewLoad={onNewLoad}
         freeRemaining={isPro ? null : FREE_LOAD_LIMIT - countLoads()}
         freeLimit={FREE_LOAD_LIMIT}
+        greetingName={profile.driverName}
+        metrics={[
+          { label: 'Active', value: `${stats.activeLoads}` },
+          { label: 'Reports', value: `${stats.reportsGenerated}` },
+          { label: 'Logged', value: formatHours(stats.totalHoursLoggedMs / 3600000) },
+        ]}
       />
 
       <View style={{ marginTop: 26 }}>
@@ -52,8 +58,8 @@ export default function Dashboard() {
           <StatCard label="Completed" value={`${stats.completedLoads}`} icon="checkmark-done" tone="success" />
           <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" tone="violet" />
           <StatCard label="Hours Logged" value={formatHours(stats.totalHoursLoggedMs / 3600000)} icon="time" tone="teal" />
-          <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" level={stats.incidentsRecorded > 0 ? 'watch' : 'normal'} />
-          <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" level={stats.hoursDetainedMs > 0 ? 'significant' : 'normal'} />
+          <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" tone={stats.incidentsRecorded > 0 ? 'warning' : 'neutral'} />
+          <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" tone={stats.hoursDetainedMs > 0 ? 'danger' : 'neutral'} />
         </View>
       </View>
 

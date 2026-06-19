@@ -59,8 +59,8 @@ export default function Analytics() {
 
       <View style={styles.grid}>
         <StatCard label="Loads Logged" value={`${stats.loadsLogged}`} icon="cube" tone="accent" />
-        <StatCard label="Hours Detained" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" level={stats.hoursDetainedMs > 0 ? 'significant' : 'normal'} />
-        <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" level={stats.incidentsRecorded > 0 ? 'watch' : 'normal'} />
+        <StatCard label="Hours Detained" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" tone={stats.hoursDetainedMs > 0 ? 'danger' : 'neutral'} />
+        <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" tone={stats.incidentsRecorded > 0 ? 'warning' : 'neutral'} />
         <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" tone="violet" />
         <StatCard label="Avg Facility Time" value={stats.avgFacilityTimeMs != null ? formatDuration(stats.avgFacilityTimeMs) : '—'} icon="time" tone="teal" />
         <StatCard label="Top Delay" value={stats.mostCommonDelay ?? '—'} icon="alert-circle" tone="indigo" />
