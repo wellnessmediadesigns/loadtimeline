@@ -6,6 +6,7 @@ export { Chip } from './Chip';
 export { EmptyState } from './EmptyState';
 export { EventButton } from './EventButton';
 export { Field } from './Field';
+export { HeroCard } from './HeroCard';
 export { IncidentRow } from './IncidentRow';
 export { LoadCard } from './LoadCard';
 export { Logo } from './Logo';

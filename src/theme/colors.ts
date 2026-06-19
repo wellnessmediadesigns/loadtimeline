@@ -24,6 +24,12 @@ export interface ThemeColors {
   slate: string;
   accent: string;
   accentSoft: string;
+  teal: string;
+  tealSoft: string;
+  violet: string;
+  violetSoft: string;
+  indigo: string;
+  indigoSoft: string;
   success: string;
   successSoft: string;
   warning: string;
@@ -47,6 +53,12 @@ export const lightColors: ThemeColors = {
   slate: brand.slate,
   accent: brand.accent,
   accentSoft: '#DBEAFE',
+  teal: '#0D9488',
+  tealSoft: '#CCFBF1',
+  violet: '#7C3AED',
+  violetSoft: '#EDE9FE',
+  indigo: '#4F46E5',
+  indigoSoft: '#E0E7FF',
   success: brand.success,
   successSoft: '#DCFCE7',
   warning: brand.warning,
@@ -70,6 +82,12 @@ export const darkColors: ThemeColors = {
   slate: '#1E293B',
   accent: '#3B82F6',
   accentSoft: '#1E3A8A',
+  teal: '#2DD4BF',
+  tealSoft: '#134E4A',
+  violet: '#A78BFA',
+  violetSoft: '#4C1D95',
+  indigo: '#818CF8',
+  indigoSoft: '#312E81',
   success: brand.success,
   successSoft: '#14532D',
   warning: brand.warning,

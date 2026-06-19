@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, EmptyState, LoadCard, Logo, Screen, SectionTitle, StatCard } from '@/components';
+import { Card, EmptyState, HeroCard, LoadCard, Screen, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { countLoads, listLoads } from '@/db/queries/loads';
@@ -39,29 +39,23 @@ export default function Dashboard() {
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
-      <View style={styles.header}>
-        <View style={{ gap: 8 }}>
-          <Logo size={26} wordmark />
-          <Text style={[t.typography.display, { color: t.colors.text }]}>LoadTimeline</Text>
-          <Text style={[t.typography.body, { color: t.colors.accent }]}>If It Happened, Prove It.</Text>
+      <HeroCard
+        onNewLoad={onNewLoad}
+        freeRemaining={isPro ? null : FREE_LOAD_LIMIT - countLoads()}
+        freeLimit={FREE_LOAD_LIMIT}
+      />
+
+      <View style={{ marginTop: 26 }}>
+        <SectionTitle title="Overview" />
+        <View style={styles.statGrid}>
+          <StatCard label="Active Loads" value={`${stats.activeLoads}`} icon="cube" tone="accent" />
+          <StatCard label="Completed" value={`${stats.completedLoads}`} icon="checkmark-done" tone="success" />
+          <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" tone="violet" />
+          <StatCard label="Hours Logged" value={formatHours(stats.totalHoursLoggedMs / 3600000)} icon="time" tone="teal" />
+          <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" level={stats.incidentsRecorded > 0 ? 'watch' : 'normal'} />
+          <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" level={stats.hoursDetainedMs > 0 ? 'significant' : 'normal'} />
         </View>
       </View>
-
-      <View style={styles.statGrid}>
-        <StatCard label="Active Loads" value={`${stats.activeLoads}`} icon="cube" />
-        <StatCard label="Completed" value={`${stats.completedLoads}`} icon="checkmark-done" />
-        <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" />
-        <StatCard label="Hours Logged" value={formatHours(stats.totalHoursLoggedMs / 3600000)} icon="time" />
-        <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" level={stats.incidentsRecorded > 0 ? 'watch' : 'normal'} />
-        <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" level={stats.hoursDetainedMs > 0 ? 'significant' : 'normal'} />
-      </View>
-
-      <Button label="NEW LOAD" icon="add-circle" size="lg" onPress={onNewLoad} style={{ marginTop: 18 }} />
-      {!isPro ? (
-        <Text style={[t.typography.caption, { color: t.colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
-          {Math.max(0, FREE_LOAD_LIMIT - countLoads())} of {FREE_LOAD_LIMIT} free loads remaining
-        </Text>
-      ) : null}
 
       <View style={{ marginTop: 26 }}>
         <SectionTitle title="Active Loads" />
@@ -122,9 +116,8 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   list: { gap: 12 },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  activityIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  activityIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });
