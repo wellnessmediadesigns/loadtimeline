@@ -4,15 +4,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/theme';
 import type { DetentionLevel } from '@/lib/detention';
 
+export type StatTone =
+  | 'accent'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'teal'
+  | 'violet'
+  | 'indigo'
+  | 'neutral';
+
 interface StatCardProps {
   label: string;
   value: string;
   icon?: React.ComponentProps<typeof Ionicons>['name'];
   level?: DetentionLevel;
+  /** Distinct icon color, independent of detention `level`. Takes precedence when set. */
+  tone?: StatTone;
   hint?: string;
 }
 
-export function StatCard({ label, value, icon, level = 'normal', hint }: StatCardProps) {
+export function StatCard({ label, value, icon, level = 'normal', tone, hint }: StatCardProps) {
   const t = useTheme();
 
   const accentByLevel: Record<DetentionLevel, { fg: string; bg: string }> = {
@@ -20,7 +32,17 @@ export function StatCard({ label, value, icon, level = 'normal', hint }: StatCar
     watch: { fg: t.colors.warning, bg: t.colors.warningSoft },
     significant: { fg: t.colors.danger, bg: t.colors.dangerSoft },
   };
-  const accent = accentByLevel[level];
+  const accentByTone: Record<StatTone, { fg: string; bg: string }> = {
+    accent: { fg: t.colors.accent, bg: t.colors.accentSoft },
+    success: { fg: t.colors.success, bg: t.colors.successSoft },
+    warning: { fg: t.colors.warning, bg: t.colors.warningSoft },
+    danger: { fg: t.colors.danger, bg: t.colors.dangerSoft },
+    teal: { fg: t.colors.teal, bg: t.colors.tealSoft },
+    violet: { fg: t.colors.violet, bg: t.colors.violetSoft },
+    indigo: { fg: t.colors.indigo, bg: t.colors.indigoSoft },
+    neutral: { fg: t.colors.textSecondary, bg: t.colors.cardAlt },
+  };
+  const accent = tone ? accentByTone[tone] : accentByLevel[level];
 
   return (
     <View
@@ -30,16 +52,16 @@ export function StatCard({ label, value, icon, level = 'normal', hint }: StatCar
           backgroundColor: t.colors.card,
           borderRadius: t.radius.lg,
           borderColor: t.colors.border,
-          ...t.shadow(1),
+          ...t.shadow(2),
         },
       ]}
     >
       {icon ? (
         <View style={[styles.iconWrap, { backgroundColor: accent.bg }]}>
-          <Ionicons name={icon} size={18} color={accent.fg} />
+          <Ionicons name={icon} size={20} color={accent.fg} />
         </View>
       ) : null}
-      <Text style={[t.typography.title, { color: t.colors.text }]} numberOfLines={1}>
+      <Text style={[t.typography.display, { color: t.colors.text }]} numberOfLines={1}>
         {value}
       </Text>
       <Text style={[t.typography.caption, { color: t.colors.textSecondary }]} numberOfLines={1}>
@@ -55,13 +77,13 @@ export function StatCard({ label, value, icon, level = 'normal', hint }: StatCar
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, minWidth: 150, borderWidth: 1, padding: 14, gap: 2 },
+  card: { flex: 1, minWidth: 150, borderWidth: 1, padding: 16, gap: 2 },
   iconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
 });
