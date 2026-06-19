@@ -12,7 +12,7 @@ import { APP_INFO } from '@/lib/limits';
 const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Light' },
   { mode: 'dark', label: 'Dark' },
-  { mode: 'system', label: 'System' },
+  { mode: 'system', label: 'Automatic' },
 ];
 
 export default function Settings() {
@@ -73,6 +73,9 @@ export default function Settings() {
             <Chip key={opt.mode} label={opt.label} selected={themeMode === opt.mode} onPress={() => setThemeMode(opt.mode)} />
           ))}
         </View>
+        <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
+          Automatic matches your phone&apos;s Light / Dark setting.
+        </Text>
       </Card>
 
       <SectionTitle title="Driver Profile" style={{ marginTop: 24 }} />
