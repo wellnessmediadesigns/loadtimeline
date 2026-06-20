@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Chip, EmptyState, LoadCard, Screen, SectionTitle } from '@/components';
+import { Card, Chip, EmptyState, LoadCard, Screen, ScreenHeading, SectionTitle } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { searchLoads } from '@/db/queries/loads';
 import type { Load, LoadStatus } from '@/types';
@@ -36,12 +36,9 @@ export default function History() {
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
-      <Text style={[t.typography.display, { color: t.colors.text, marginBottom: 4 }]}>History</Text>
-      <Text style={[t.typography.body, { color: t.colors.textSecondary, marginBottom: 16 }]}>
-        Searchable archive of every load.
-      </Text>
+      <ScreenHeading title="History" subtitle="Searchable archive of every load." icon="time" />
 
-      <View style={[styles.search, { backgroundColor: t.colors.card, borderColor: t.colors.border }]}>
+      <View style={[styles.search, { backgroundColor: t.colors.cardAlt, borderColor: t.colors.border }]}>
         <Ionicons name="search" size={18} color={t.colors.textSecondary} />
         <TextInput
           value={query}

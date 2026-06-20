@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AppHeader, Button, Field, Screen } from '@/components';
+import { AppHeader, Button, Field, FormSection, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { getLoad, updateLoad } from '@/db/queries/loads';
 
@@ -58,16 +58,30 @@ export default function EditLoad() {
       <AppHeader title="Edit Load" closeIcon />
       <Screen footer={<Button label="Save Changes" icon="checkmark" size="lg" onPress={onSave} />}>
         <View style={{ gap: 16 }}>
-          <Field label="Load Number" value={form.loadNumber} onChangeText={set('loadNumber')} autoCapitalize="characters" />
-          <Field label="Broker Name" value={form.brokerName} onChangeText={set('brokerName')} autoCapitalize="words" />
-          <Field label="Customer Name" value={form.customerName} onChangeText={set('customerName')} autoCapitalize="words" />
-          <Field label="Pickup Location" value={form.pickupLocation} onChangeText={set('pickupLocation')} autoCapitalize="words" />
-          <Field label="Delivery Location" value={form.deliveryLocation} onChangeText={set('deliveryLocation')} autoCapitalize="words" />
-          <Field label="Reference Number" value={form.referenceNumber} onChangeText={set('referenceNumber')} autoCapitalize="characters" />
-          <Field label="Trailer Number" value={form.trailerNumber} onChangeText={set('trailerNumber')} autoCapitalize="characters" />
-          <Field label="Driver Name" value={form.driverName} onChangeText={set('driverName')} placeholder="Overrides your profile for this load" autoCapitalize="words" />
-          <Field label="Company" value={form.company} onChangeText={set('company')} placeholder="Overrides your profile for this load" autoCapitalize="words" />
-          <Field label="Driver Notes" value={form.driverNotes} onChangeText={set('driverNotes')} multiline />
+          <FormSection title="Load" icon="cube">
+            <Field label="Load Number" value={form.loadNumber} onChangeText={set('loadNumber')} icon="pricetag" autoCapitalize="characters" />
+            <Field label="Reference Number" value={form.referenceNumber} onChangeText={set('referenceNumber')} icon="document-text" autoCapitalize="characters" />
+            <Field label="Trailer Number" value={form.trailerNumber} onChangeText={set('trailerNumber')} icon="bus" autoCapitalize="characters" />
+          </FormSection>
+
+          <FormSection title="Route" icon="navigate">
+            <Field label="Pickup Location" value={form.pickupLocation} onChangeText={set('pickupLocation')} icon="location" autoCapitalize="words" />
+            <Field label="Delivery Location" value={form.deliveryLocation} onChangeText={set('deliveryLocation')} icon="flag" autoCapitalize="words" />
+          </FormSection>
+
+          <FormSection title="Parties" icon="people">
+            <Field label="Broker Name" value={form.brokerName} onChangeText={set('brokerName')} icon="briefcase" autoCapitalize="words" />
+            <Field label="Customer Name" value={form.customerName} onChangeText={set('customerName')} icon="business" autoCapitalize="words" />
+          </FormSection>
+
+          <FormSection title="Driver Override" icon="person">
+            <Field label="Driver Name" value={form.driverName} onChangeText={set('driverName')} placeholder="Defaults to your profile" icon="person-circle" autoCapitalize="words" />
+            <Field label="Company" value={form.company} onChangeText={set('company')} placeholder="Defaults to your profile" icon="business" autoCapitalize="words" hint="Leave blank to use your Settings profile." />
+          </FormSection>
+
+          <FormSection title="Notes" icon="create">
+            <Field label="Driver Notes" value={form.driverNotes} onChangeText={set('driverNotes')} multiline />
+          </FormSection>
         </View>
       </Screen>
     </View>

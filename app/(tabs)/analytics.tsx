@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BarChart, Card, EmptyState, Screen, SectionTitle, StatCard } from '@/components';
+import { BarChart, Card, EmptyState, Screen, ScreenHeading, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import {
@@ -39,7 +39,7 @@ export default function Analytics() {
   if (stats.loadsLogged === 0) {
     return (
       <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
-        <Text style={[t.typography.display, { color: t.colors.text, marginBottom: 16 }]}>Analytics</Text>
+        <ScreenHeading title="Analytics" icon="stats-chart" />
         <Card>
           <EmptyState icon="stats-chart-outline" title="No data yet" message="Log a few loads and your performance insights will appear here." />
         </Card>
@@ -52,10 +52,7 @@ export default function Analytics() {
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
-      <Text style={[t.typography.display, { color: t.colors.text, marginBottom: 4 }]}>Analytics</Text>
-      <Text style={[t.typography.body, { color: t.colors.textSecondary, marginBottom: 16 }]}>
-        Your documentation at a glance.
-      </Text>
+      <ScreenHeading title="Analytics" subtitle="Your documentation at a glance." icon="stats-chart" />
 
       <View style={styles.grid}>
         <StatCard label="Loads Logged" value={`${stats.loadsLogged}`} icon="cube" tone="accent" />

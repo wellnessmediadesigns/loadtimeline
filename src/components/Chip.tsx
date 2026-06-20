@@ -8,18 +8,21 @@ interface ChipProps {
   selected?: boolean;
   onPress?: () => void;
   icon?: React.ComponentProps<typeof Ionicons>['name'];
+  /** Color used when selected (defaults to the accent color). */
+  color?: string;
 }
 
-export function Chip({ label, selected, onPress, icon }: ChipProps) {
+export function Chip({ label, selected, onPress, icon, color }: ChipProps) {
   const t = useTheme();
+  const selectedColor = color ?? t.colors.accent;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? t.colors.accent : t.colors.card,
-          borderColor: selected ? t.colors.accent : t.colors.border,
+          backgroundColor: selected ? selectedColor : t.colors.card,
+          borderColor: selected ? selectedColor : t.colors.border,
           opacity: pressed ? 0.85 : 1,
         },
       ]}

@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Chip, Field, Logo, Screen, SectionTitle } from '@/components';
+import { Card, Chip, Field, Logo, Screen, ScreenHeading, SectionTitle } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings, ThemeMode } from '@/store/settings';
 import { exportBackup, importBackup } from '@/lib/backup';
@@ -63,7 +63,7 @@ export default function Settings() {
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
-      <Text style={[t.typography.display, { color: t.colors.text, marginBottom: 16 }]}>Settings</Text>
+      <ScreenHeading title="Settings" icon="settings" />
 
       <SectionTitle title="Appearance" />
       <Card style={{ gap: 12 }}>
