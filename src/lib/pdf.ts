@@ -68,6 +68,12 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 
   const title = load.loadNumber ? `Load ${esc(load.loadNumber)}` : 'Load Documentation';
   const accent = brand.accent;
+  const statusLabel = load.status === 'active' ? 'Active' : 'Completed';
+  const routeFrom = load.shipper || load.pickupLocation;
+  const routeTo = load.receiver || load.deliveryLocation;
+  const routeHtml = routeFrom || routeTo
+    ? `${esc(routeFrom ?? '—')} <span class="arw">&rarr;</span> ${esc(routeTo ?? '—')}`
+    : '';
 
   // Load Number, Pickup and Delivery are always included; the rest are
   // optional so a driver can withhold who the customer/broker is.
@@ -77,22 +83,25 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     ['Delivery', load.deliveryLocation],
     ...(f.driver ? ([['Driver', opts.driverName ?? null]] as [string, string | null][]) : []),
     ...(f.driver ? ([['Company', opts.company ?? null]] as [string, string | null][]) : []),
-    ...(f.broker ? ([['Broker', load.brokerName]] as [string, string | null][]) : []),
     ...(f.parties ? ([['Shipper', load.shipper]] as [string, string | null][]) : []),
     ...(f.parties ? ([['Receiver', load.receiver]] as [string, string | null][]) : []),
+    ...(f.broker ? ([['Broker', load.brokerName]] as [string, string | null][]) : []),
     ...(f.reference ? ([['Reference #', load.referenceNumber]] as [string, string | null][]) : []),
     ...(f.trailer ? ([['Trailer #', load.trailerNumber]] as [string, string | null][]) : []),
-    ...(f.status ? ([['Status', load.status === 'active' ? 'Active' : 'Completed']] as [string, string | null][]) : []),
+    ...(f.status ? ([['Status', statusLabel]] as [string, string | null][]) : []),
   ];
   const detailsHtml = detailRows
     .filter(([, v]) => v)
     .map(
       ([k, v]) =>
-        `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`,
+        `<div class="dcell"><div class="dk">${esc(k)}</div><div class="dv">${esc(v)}</div></div>`,
     )
     .join('');
 
-  const eventRow = (e: LoadEvent) => {
+  const statCard = (label: string, value: string, level?: DetentionLevel) =>
+    `<div class="stat${level ? ` lvl-${level}` : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
+
+  const eventRow = (e: LoadEvent, isLast: boolean) => {
     const meta = EVENT_META[e.type];
     const photos = listPhotos('event', e.id);
     const photoHtml = photos
@@ -103,43 +112,43 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
       .join('');
     const coords = shortCoords(e.latitude, e.longitude);
     return `
-      <div class="tl-row">
-        <div class="tl-time">${esc(formatTime(e.timestamp))}<span class="tl-date">${esc(formatDate(e.timestamp))}</span></div>
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-label">${esc(meta?.label ?? e.type)}</div>
-          ${e.address ? `<div class="tl-sub">${esc(e.address)}</div>` : ''}
-          ${coords ? `<div class="tl-coords">GPS: ${esc(coords)}</div>` : ''}
+      <div class="tl-row${isLast ? ' tl-last' : ''}">
+        <div class="tl-rail"><div class="tl-dot"></div></div>
+        <div class="tl-main">
+          <div class="tl-top">
+            <div class="tl-label">${esc(meta?.label ?? e.type)}</div>
+            <div class="tl-time">${esc(formatTime(e.timestamp))} <span class="tl-date">· ${esc(formatDate(e.timestamp))}</span></div>
+          </div>
+          ${e.address ? `<div class="tl-sub"><span class="pin">&#9679;</span>${esc(e.address)}</div>` : ''}
+          ${coords ? `<div class="tl-coords">GPS ${esc(coords)}</div>` : ''}
           ${e.notes ? `<div class="tl-note">${esc(e.notes)}</div>` : ''}
           ${photoHtml ? `<div class="thumbs">${photoHtml}</div>` : ''}
         </div>
       </div>`;
   };
 
-  const timelineHtml = STOP_ORDER.filter(includeStop).map((s) => {
+  // One consolidated card per stop: detention stats + that stop's timeline.
+  const stopCardHtml = (s: 'pickup' | 'delivery') => {
     const stopEvents = events.filter((e) => e.stop === s);
     if (stopEvents.length === 0) return '';
     const meta = STOP_META[s];
-    const loc = s === 'pickup' ? load.pickupLocation : load.deliveryLocation;
-    return `<div class="stop-group">
-      <div class="stop-head">${esc(meta.label)}${loc ? ` — ${esc(loc)}` : ''}</div>
-      <div class="stop-body">${stopEvents.map(eventRow).join('')}</div>
-    </div>`;
-  }).join('') || '<div class="muted">No events recorded for the selected stops.</div>';
-
-  const statCard = (label: string, value: string, level?: DetentionLevel) =>
-    `<div class="stat${level ? ` lvl-${level}` : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
-
-  const stopDetentionHtml = (sd: StopDetention) => {
-    const meta = STOP_META[sd.stop];
-    return `<div class="stop-group">
-      <div class="stop-head">${esc(meta.label)}</div>
-      <div class="stop-body"><div class="stats">
+    const sd = s === 'pickup' ? detention.pickup : detention.delivery;
+    const loc = (s === 'pickup' ? load.pickupLocation : load.deliveryLocation) || stopEvents.find((e) => e.address)?.address || null;
+    const span = sd.arrivedAt != null
+      ? `${esc(formatDateTime(sd.arrivedAt))}${sd.departedAt != null ? ` &rarr; ${esc(formatTime(sd.departedAt))}` : sd.ongoing ? ' &rarr; on site now' : ''}`
+      : '';
+    return `<div class="stopcard">
+      <div class="stopcard-head">
+        <div class="sc-l"><span class="sc-name">${esc(meta.label)}</span>${loc ? `<span class="sc-loc">${esc(loc)}</span>` : ''}</div>
+        ${span ? `<div class="sc-span">${span}</div>` : ''}
+      </div>
+      <div class="stopcard-stats">
         ${statCard('Time On Site', formatDuration(sd.onSiteMs), onSiteLevel(sd.onSiteMs))}
         ${statCard('Wait Time', formatDuration(sd.waitMs), onSiteLevel(sd.waitMs))}
         ${statCard(meta.serviceLabel, formatDuration(sd.serviceMs))}
         ${statCard('Potential Detention', detentionText(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs))}
-      </div></div>
+      </div>
+      <div class="stopcard-tl">${stopEvents.map((e, i) => eventRow(e, i === stopEvents.length - 1)).join('')}</div>
     </div>`;
   };
 
@@ -150,12 +159,16 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const scopedDetentionMs =
     (showPickupDet ? detention.pickup.potentialDetentionMs : 0) +
     (showDeliveryDet ? detention.delivery.potentialDetentionMs : 0);
-  const detentionHtml = `
-    ${showPickupDet ? stopDetentionHtml(detention.pickup) : ''}
-    ${showDeliveryDet ? stopDetentionHtml(detention.delivery) : ''}
-    ${showPickupDet && showDeliveryDet ? `<div class="combined">${scopedDetentionMs > 0 ? `Combined potential detention: <b>${formatDuration(scopedDetentionMs)}</b>` : '<b>No detention incurred</b> across either stop.'}</div>` : ''}
-    ${anyDetention ? `<div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>` : '<div class="muted">No detention data for the selected stops.</div>'}
-  `;
+
+  const stopsHtml = STOP_ORDER.filter(includeStop).map(stopCardHtml).join('')
+    || '<div class="muted">No events recorded for the selected stops.</div>';
+
+  const detentionFootHtml = anyDetention
+    ? `<div class="det-foot">
+        ${showPickupDet && showDeliveryDet ? `<div class="combined">${scopedDetentionMs > 0 ? `Combined potential detention: <b class="det">${formatDuration(scopedDetentionMs)}</b>` : '<b class="ok">No detention incurred</b> across either stop.'}</div>` : ''}
+        <div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>
+      </div>`
+    : '';
 
   // Trip summary band (page 1): first included-stop arrival -> last departure.
   const includedStops = STOP_ORDER.filter(includeStop).map((s) => (s === 'pickup' ? detention.pickup : detention.delivery));
@@ -172,10 +185,10 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     ? `<div class="tripband">
         <div class="stats">
           ${statCard('Total Trip', formatDuration(tripMs))}
-          ${statCard('On Site', formatDuration(tripOnSiteMs), onSiteLevel(tripOnSiteMs))}
+          ${statCard('Combined On Site', formatDuration(tripOnSiteMs), onSiteLevel(tripOnSiteMs))}
           ${statCard('Potential Detention', detentionText(scopedDetentionMs), detentionLevel(scopedDetentionMs))}
         </div>
-        <div class="trip-sub">Arrived ${esc(formatDateTime(tripStart))} ${tripOngoing ? '· on site now' : `→ Departed ${esc(formatDateTime(tripEnd))}`}</div>
+        <div class="trip-sub">Arrived ${esc(formatDateTime(tripStart))} ${tripOngoing ? '· on site now' : `&rarr; Departed ${esc(formatDateTime(tripEnd))}`}</div>
       </div>`
     : '';
 
@@ -228,105 +241,160 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #111827; margin: 0; padding: 0 28px 40px; }
-  .header { background: ${brand.navy}; color: #F8FAFC; margin: 0 -28px 24px; padding: 28px; }
-  .brandrow { display: flex; align-items: center; gap: 9px; margin-bottom: 2px; }
+  @page { size: letter; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #111827; font-size: 13px; }
+  .content { padding: 22px 32px 40px; }
+
+  /* Letterhead */
+  .header { background: ${brand.navy}; color: #F8FAFC; padding: 26px 32px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .head-l { display: flex; flex-direction: column; }
+  .brandrow { display: flex; align-items: center; gap: 9px; }
   .of-mark { display: flex; flex-direction: column; gap: 3px; }
   .of-mark .ofr { display: flex; gap: 3px; }
   .of-mark .sq { width: 9px; height: 9px; border-radius: 2px; }
   .of-mark .bar { width: 21px; height: 9px; border-radius: 2px; }
   .of-mark .blue { background: #4773D6; }
   .of-mark .cyan { background: #5BC8E8; }
-  .brand { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #94A3B8; }
-  .app { font-size: 26px; font-weight: 800; margin: 4px 0 2px; }
-  .tagline { font-size: 13px; color: ${accent === brand.accent ? '#60A5FA' : '#60A5FA'}; font-weight: 600; }
-  .doc-title { font-size: 20px; font-weight: 700; margin-top: 14px; }
-  .doc-sub { font-size: 12px; color: #94A3B8; margin-top: 2px; }
-  .section { margin-top: 26px; page-break-inside: avoid; }
-  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: ${accent}; border-bottom: 2px solid #E5E7EB; padding-bottom: 6px; margin-bottom: 12px; }
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 6px 0; font-size: 13px; vertical-align: top; }
-  td.k { color: #6B7280; width: 140px; font-weight: 600; }
-  td.v { color: #111827; font-weight: 600; }
-  .stats { display: flex; flex-wrap: wrap; gap: 10px; }
-  .stat { border: 1px solid #E5E7EB; border-left: 4px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; min-width: 120px; flex: 1; }
-  .stat-v { font-size: 20px; font-weight: 800; }
-  .stat-l { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-  .stat.lvl-normal { border-left-color: ${brand.success}; }
+  .brand { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #94A3B8; font-weight: 700; }
+  .app { font-size: 25px; font-weight: 800; margin: 10px 0 1px; letter-spacing: -0.3px; }
+  .tagline { font-size: 12px; color: #60A5FA; font-weight: 600; }
+  .head-r { text-align: right; max-width: 48%; }
+  .doc-kicker { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #94A3B8; font-weight: 700; }
+  .doc-title { font-size: 22px; font-weight: 800; margin: 2px 0 8px; letter-spacing: -0.3px; }
+  .hstatus { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+  .hstatus.active { background: ${accent}; color: #fff; }
+  .hstatus.completed { background: ${brand.success}; color: #fff; }
+  .hroute { font-size: 13px; font-weight: 700; color: #E2E8F0; margin-top: 9px; }
+  .hroute .arw { color: #60A5FA; padding: 0 2px; }
+  .hgen { font-size: 10px; color: #94A3B8; margin-top: 6px; }
+
+  /* Sections */
+  .section { margin-top: 22px; page-break-inside: avoid; }
+  .section.tight { margin-top: 16px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: ${brand.navy}; margin: 0 0 11px; display: flex; align-items: center; gap: 8px; }
+  h2:before { content: ''; width: 3px; height: 14px; background: ${accent}; border-radius: 2px; display: inline-block; }
+
+  /* Detail grid */
+  .dgrid { display: flex; flex-wrap: wrap; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
+  .dcell { width: 33.33%; padding: 11px 14px; border-bottom: 1px solid #EEF1F5; border-right: 1px solid #EEF1F5; }
+  .dk { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #94A3B8; font-weight: 700; }
+  .dv { font-size: 13.5px; font-weight: 700; color: #111827; margin-top: 3px; }
+
+  /* Stat cards */
+  .stats { display: flex; flex-wrap: wrap; gap: 9px; }
+  .stat { border: 1px solid #E5E7EB; border-top: 3px solid #CBD5E1; border-radius: 10px; padding: 10px 12px; min-width: 110px; flex: 1; background: #fff; }
+  .stat-v { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+  .stat-l { font-size: 9.5px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; font-weight: 700; }
+  .stat.lvl-normal { border-top-color: ${brand.success}; }
   .stat.lvl-normal .stat-v { color: ${brand.success}; }
-  .stat.lvl-watch { border-left-color: ${brand.warning}; }
+  .stat.lvl-watch { border-top-color: ${brand.warning}; }
   .stat.lvl-watch .stat-v { color: ${brand.warning}; }
-  .stat.lvl-significant { border-left-color: ${brand.danger}; }
+  .stat.lvl-significant { border-top-color: ${brand.danger}; }
   .stat.lvl-significant .stat-v { color: ${brand.danger}; }
-  .tripband { background: #F8FAFC; border: 1px solid #E5E7EB; border-left: 4px solid ${accent}; border-radius: 14px; padding: 16px; }
-  .trip-sub { font-size: 12px; color: #6B7280; margin-top: 10px; font-weight: 600; }
-  .stop-group { margin-bottom: 16px; page-break-inside: avoid; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
-  .stop-head { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #fff; background: ${brand.navy}; border-left: 4px solid ${accent}; padding: 9px 12px; }
-  .stop-body { padding: 6px 14px 10px; }
-  .combined { margin-top: 10px; font-size: 13px; color: #111827; }
-  .tl-row { display: flex; gap: 12px; padding: 8px 0; border-left: 0; }
-  .tl-time { width: 96px; font-size: 13px; font-weight: 700; }
-  .tl-date { display: block; font-size: 10px; color: #6B7280; font-weight: 500; }
-  .tl-dot { width: 12px; height: 12px; border-radius: 6px; background: ${accent}; margin-top: 4px; flex: none; }
-  .tl-body { flex: 1; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px; }
-  .tl-label { font-size: 15px; font-weight: 700; }
-  .tl-sub { font-size: 12px; color: #374151; margin-top: 2px; }
-  .tl-coords { font-size: 11px; color: #6B7280; margin-top: 1px; font-family: monospace; }
-  .tl-note { font-size: 12px; color: #111827; margin-top: 4px; background: #F8FAFC; padding: 6px 8px; border-radius: 8px; }
+
+  /* Trip band */
+  .tripband { background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 14px; padding: 14px; }
+  .tripband .stat { background: #fff; }
+  .trip-sub { font-size: 11.5px; color: #475569; margin-top: 11px; font-weight: 600; text-align: center; }
+
+  /* Stop cards (detention + timeline consolidated) */
+  .stopcard { border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; margin-bottom: 16px; page-break-inside: avoid; }
+  .stopcard-head { background: ${brand.navy}; border-left: 4px solid ${accent}; color: #fff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: baseline; }
+  .sc-name { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+  .sc-loc { font-size: 12px; color: #CBD5E1; font-weight: 600; margin-left: 8px; }
+  .sc-span { font-size: 10.5px; color: #94A3B8; font-weight: 600; }
+  .stopcard-stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #EEF1F5; background: #FBFCFE; }
+  .stopcard-tl { padding: 6px 14px 4px; }
+
+  /* Timeline rail */
+  .tl-row { display: flex; gap: 12px; }
+  .tl-rail { position: relative; width: 12px; flex: none; }
+  .tl-rail:before { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: #E5E7EB; }
+  .tl-row.tl-last .tl-rail:before { bottom: auto; height: 16px; }
+  .tl-dot { position: absolute; left: 0; top: 14px; width: 12px; height: 12px; border-radius: 6px; background: ${accent}; border: 2px solid #fff; box-shadow: 0 0 0 1px ${accent}; }
+  .tl-main { flex: 1; padding: 11px 0; border-bottom: 1px solid #F1F5F9; }
+  .tl-row.tl-last .tl-main { border-bottom: 0; }
+  .tl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .tl-label { font-size: 14px; font-weight: 800; color: #0F172A; }
+  .tl-time { font-size: 12px; font-weight: 700; color: #111827; white-space: nowrap; }
+  .tl-date { color: #94A3B8; font-weight: 500; }
+  .tl-sub { font-size: 11.5px; color: #374151; margin-top: 3px; }
+  .tl-sub .pin { color: ${accent}; font-size: 8px; vertical-align: middle; margin-right: 5px; }
+  .tl-coords { font-size: 10px; color: #94A3B8; margin-top: 2px; font-family: 'SFMono-Regular', Menlo, monospace; letter-spacing: 0.2px; }
+  .tl-note { font-size: 11.5px; color: #111827; margin-top: 6px; background: #F8FAFC; border-left: 2px solid ${accent}; padding: 6px 9px; border-radius: 6px; }
   .thumbs { margin-top: 6px; }
   .thumb { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; margin: 4px 4px 0 0; border: 1px solid #E5E7EB; }
-  .incident { border: 1px solid #E5E7EB; border-left: 4px solid #9CA3AF; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+
+  /* Detention footer */
+  .det-foot { margin-top: 2px; }
+  .combined { font-size: 13px; color: #111827; margin-bottom: 4px; }
+  .combined .det { color: ${brand.danger}; }
+  .combined .ok { color: ${brand.success}; }
+
+  /* Incidents */
+  .incident { border: 1px solid #E5E7EB; border-left: 4px solid #9CA3AF; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; page-break-inside: avoid; }
   .incident.sev-low { border-left-color: ${brand.success}; }
   .incident.sev-medium { border-left-color: ${brand.warning}; }
   .incident.sev-high { border-left-color: ${brand.danger}; }
   .incident-head { display: flex; justify-content: space-between; align-items: center; }
-  .incident-title { font-size: 15px; font-weight: 700; }
-  .incident-meta { font-size: 12px; color: #6B7280; margin-top: 2px; }
-  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }
+  .incident-title { font-size: 14px; font-weight: 800; }
+  .incident-meta { font-size: 11.5px; color: #6B7280; margin-top: 2px; }
+  .badge { font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.4px; }
   .badge-low { background: ${brand.success}; color: #fff; }
   .badge-medium { background: ${brand.warning}; color: #fff; }
   .badge-high { background: ${brand.danger}; color: #fff; }
+
+  /* Gallery */
   .gallery { display: flex; flex-wrap: wrap; gap: 8px; }
   .gal { width: 160px; height: 160px; object-fit: cover; border-radius: 10px; border: 1px solid #E5E7EB; }
-  .muted { color: #6B7280; font-size: 13px; }
-  .small { font-size: 11px; margin-top: 6px; }
-  .footer { margin-top: 40px; border-top: 2px solid #E5E7EB; padding-top: 14px; font-size: 11px; color: #6B7280; text-align: center; }
+
+  .muted { color: #6B7280; font-size: 12.5px; }
+  .small { font-size: 10.5px; margin-top: 5px; }
+  .footer { margin-top: 30px; border-top: 1px solid #E5E7EB; padding-top: 14px; font-size: 10.5px; color: #94A3B8; text-align: center; }
   .footer b { color: ${brand.navy}; }
 </style>
 </head>
 <body>
   <div class="header">
-    <div class="brandrow">
-      <div class="of-mark">
-        <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
-        <div class="ofr"><span class="bar cyan"></span><span class="sq blue"></span></div>
-        <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
+    <div class="head-l">
+      <div class="brandrow">
+        <div class="of-mark">
+          <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
+          <div class="ofr"><span class="bar cyan"></span><span class="sq blue"></span></div>
+          <div class="ofr"><span class="sq blue"></span><span class="bar cyan"></span></div>
+        </div>
+        <div class="brand">Organized Freight</div>
       </div>
-      <div class="brand">Organized Freight</div>
+      <div class="app">LoadTimeline</div>
+      <div class="tagline">If It Happened, Prove It.</div>
     </div>
-    <div class="app">LoadTimeline</div>
-    <div class="tagline">If It Happened, Prove It.</div>
-    <div class="doc-title">${esc(title)}</div>
-    <div class="doc-sub">${tplLabel} · Generated ${esc(formatDateTime(Date.now()))}</div>
+    <div class="head-r">
+      <div class="doc-kicker">Load Documentation</div>
+      <div class="doc-title">${esc(title)}</div>
+      ${f.status ? `<span class="hstatus ${load.status === 'active' ? 'active' : 'completed'}">${esc(statusLabel)}</span>` : ''}
+      ${routeHtml ? `<div class="hroute">${routeHtml}</div>` : ''}
+      <div class="hgen">${esc(tplLabel)} · ${esc(formatDateTime(Date.now()))}</div>
+    </div>
   </div>
 
-  ${tripBandHtml ? `<div class="section" style="margin-top:0"><h2>Trip Summary</h2>${tripBandHtml}</div>` : ''}
+  <div class="content">
+    ${tripBandHtml ? `<div class="section tight"><h2>Trip Summary</h2>${tripBandHtml}</div>` : ''}
 
-  <div class="section"><h2>Load Details</h2><table>${detailsHtml || '<tr><td class="muted">No load details entered.</td></tr>'}</table></div>
+    <div class="section"><h2>Load Details</h2><div class="dgrid">${detailsHtml || '<div class="dcell"><div class="muted">No load details entered.</div></div>'}</div></div>
 
-  <div class="section"><h2>Detention Summary</h2>${detentionHtml}</div>
+    <div class="section"><h2>Stops &amp; Detention</h2>${stopsHtml}${detentionFootHtml}</div>
 
-  <div class="section"><h2>Timeline</h2>${timelineHtml || '<div class="muted">No events recorded.</div>'}</div>
+    <div class="section"><h2>Incident Log</h2>${incidentsHtml}</div>
 
-  <div class="section"><h2>Incident Log</h2>${incidentsHtml}</div>
+    ${f.notes && load.driverNotes ? `<div class="section"><h2>Driver Notes</h2><div class="tl-note">${esc(load.driverNotes)}</div></div>` : ''}
 
-  ${f.notes && load.driverNotes ? `<div class="section"><h2>Driver Notes</h2><div class="tl-note">${esc(load.driverNotes)}</div></div>` : ''}
+    ${galleryHtml}
 
-  ${galleryHtml}
-
-  <div class="footer">
-    Generated by <b>LoadTimeline</b> — A Product by <b>Organized Freight</b><br/>
-    OrganizedFreight.com · If It Happened, Prove It.
+    <div class="footer">
+      Generated by <b>LoadTimeline</b> — A Product by <b>Organized Freight</b><br/>
+      OrganizedFreight.com · If It Happened, Prove It.
+    </div>
   </div>
 </body>
 </html>`;
