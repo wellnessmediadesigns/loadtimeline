@@ -34,7 +34,8 @@ export interface Load {
   id: string;
   loadNumber: string | null;
   brokerName: string | null;
-  customerName: string | null;
+  shipper: string | null;
+  receiver: string | null;
   pickupLocation: string | null;
   deliveryLocation: string | null;
   referenceNumber: string | null;

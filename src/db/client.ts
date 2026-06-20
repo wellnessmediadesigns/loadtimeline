@@ -5,17 +5,40 @@
  */
 import * as SQLite from 'expo-sqlite';
 
-const DB_NAME = 'loadtimeline.db';
+const REAL_DB = 'loadtimeline.db';
+const DEMO_DB = 'loadtimeline-demo.db';
 
+let activeName = REAL_DB;
 let db: SQLite.SQLiteDatabase | null = null;
+const migrated = new Set<string>();
+
+function open(name: string): SQLite.SQLiteDatabase {
+  const d = SQLite.openDatabaseSync(name);
+  d.execSync('PRAGMA journal_mode = WAL;');
+  d.execSync('PRAGMA foreign_keys = ON;');
+  if (!migrated.has(name)) {
+    applyMigrations(d);
+    migrated.add(name);
+  }
+  return d;
+}
 
 export function getDb(): SQLite.SQLiteDatabase {
-  if (!db) {
-    db = SQLite.openDatabaseSync(DB_NAME);
-    db.execSync('PRAGMA journal_mode = WAL;');
-    db.execSync('PRAGMA foreign_keys = ON;');
-  }
+  if (!db) db = open(activeName);
   return db;
+}
+
+/** Switches the active datastore between the user's real DB and the demo DB. */
+export function setDemoMode(on: boolean): void {
+  const name = on ? DEMO_DB : REAL_DB;
+  if (name === activeName && db) return;
+  activeName = name;
+  db = null; // next getDb() opens (and lazily migrates) the target file
+  getDb();
+}
+
+export function isDemoMode(): boolean {
+  return activeName === DEMO_DB;
 }
 
 const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
@@ -93,11 +116,17 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
     d.execSync(`ALTER TABLE loads ADD COLUMN driver_name TEXT;`);
     d.execSync(`ALTER TABLE loads ADD COLUMN company TEXT;`);
   },
+  // v4 — split the single customer into distinct shipper + receiver parties
+  (d) => {
+    d.execSync(`ALTER TABLE loads ADD COLUMN shipper TEXT;`);
+    d.execSync(`ALTER TABLE loads ADD COLUMN receiver TEXT;`);
+    // Preserve any existing customer value as the shipper.
+    d.execSync(`UPDATE loads SET shipper = customer_name WHERE customer_name IS NOT NULL AND customer_name != '';`);
+  },
 ];
 
-/** Applies any pending migrations using PRAGMA user_version. */
-export function runMigrations(): void {
-  const d = getDb();
+/** Applies any pending migrations to a given DB using PRAGMA user_version. */
+function applyMigrations(d: SQLite.SQLiteDatabase): void {
   const row = d.getFirstSync<{ user_version: number }>('PRAGMA user_version;');
   const current = row?.user_version ?? 0;
   for (let v = current; v < MIGRATIONS.length; v++) {
@@ -106,6 +135,11 @@ export function runMigrations(): void {
   if (current < MIGRATIONS.length) {
     d.execSync(`PRAGMA user_version = ${MIGRATIONS.length};`);
   }
+}
+
+/** Ensures the active datastore exists and is fully migrated. */
+export function runMigrations(): void {
+  getDb();
 }
 
 /** Generates a sortable unique id without extra dependencies. */

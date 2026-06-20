@@ -30,9 +30,11 @@ export function LoadCard({ load, onPress }: { load: Load; onPress: () => void })
           <Text style={[t.typography.subtitle, { color: t.colors.text }]} numberOfLines={1}>
             {load.loadNumber ? `Load ${load.loadNumber}` : 'Untitled Load'}
           </Text>
-          {load.customerName || load.brokerName ? (
+          {load.shipper || load.receiver || load.brokerName ? (
             <Text style={[t.typography.caption, { color: t.colors.textSecondary }]} numberOfLines={1}>
-              {[load.customerName, load.brokerName].filter(Boolean).join(' · ')}
+              {[[load.shipper, load.receiver].filter(Boolean).join(' → ') || null, load.brokerName]
+                .filter(Boolean)
+                .join(' · ')}
             </Text>
           ) : null}
         </View>

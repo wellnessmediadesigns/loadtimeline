@@ -74,13 +74,13 @@ export interface RecentActivity {
   event: LoadEvent;
   loadId: string;
   loadNumber: string | null;
-  customerName: string | null;
+  shipper: string | null;
 }
 
 /** Most recent events across all loads, for the dashboard activity feed. */
 export function recentActivity(limit = 8): RecentActivity[] {
-  const rows = getDb().getAllSync<EventRow & { load_number: string | null; customer_name: string | null }>(
-    `SELECT e.*, l.load_number, l.customer_name
+  const rows = getDb().getAllSync<EventRow & { load_number: string | null; shipper: string | null }>(
+    `SELECT e.*, l.load_number, l.shipper
      FROM events e JOIN loads l ON l.id = e.load_id
      ORDER BY e.timestamp DESC LIMIT ?`,
     [limit],
@@ -89,7 +89,7 @@ export function recentActivity(limit = 8): RecentActivity[] {
     event: mapRow(r),
     loadId: r.load_id,
     loadNumber: r.load_number,
-    customerName: r.customer_name,
+    shipper: r.shipper,
   }));
 }
 

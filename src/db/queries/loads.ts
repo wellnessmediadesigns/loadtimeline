@@ -5,7 +5,8 @@ interface LoadRow {
   id: string;
   load_number: string | null;
   broker_name: string | null;
-  customer_name: string | null;
+  shipper: string | null;
+  receiver: string | null;
   pickup_location: string | null;
   delivery_location: string | null;
   reference_number: string | null;
@@ -23,7 +24,8 @@ function mapRow(r: LoadRow): Load {
     id: r.id,
     loadNumber: r.load_number,
     brokerName: r.broker_name,
-    customerName: r.customer_name,
+    shipper: r.shipper,
+    receiver: r.receiver,
     pickupLocation: r.pickup_location,
     deliveryLocation: r.delivery_location,
     referenceNumber: r.reference_number,
@@ -40,7 +42,8 @@ function mapRow(r: LoadRow): Load {
 export interface LoadInput {
   loadNumber?: string | null;
   brokerName?: string | null;
-  customerName?: string | null;
+  shipper?: string | null;
+  receiver?: string | null;
   pickupLocation?: string | null;
   deliveryLocation?: string | null;
   referenceNumber?: string | null;
@@ -56,14 +59,15 @@ export function createLoad(input: LoadInput): Load {
   const id = newId();
   db.runSync(
     `INSERT INTO loads
-      (id, load_number, broker_name, customer_name, pickup_location, delivery_location,
+      (id, load_number, broker_name, shipper, receiver, pickup_location, delivery_location,
        reference_number, trailer_number, driver_notes, driver_name, company, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
     [
       id,
       input.loadNumber ?? null,
       input.brokerName ?? null,
-      input.customerName ?? null,
+      input.shipper ?? null,
+      input.receiver ?? null,
       input.pickupLocation ?? null,
       input.deliveryLocation ?? null,
       input.referenceNumber ?? null,
@@ -100,14 +104,15 @@ export function updateLoad(id: string, input: LoadInput): void {
   const db = getDb();
   db.runSync(
     `UPDATE loads SET
-      load_number = ?, broker_name = ?, customer_name = ?, pickup_location = ?,
+      load_number = ?, broker_name = ?, shipper = ?, receiver = ?, pickup_location = ?,
       delivery_location = ?, reference_number = ?, trailer_number = ?, driver_notes = ?,
       driver_name = ?, company = ?, updated_at = ?
      WHERE id = ?`,
     [
       input.loadNumber ?? null,
       input.brokerName ?? null,
-      input.customerName ?? null,
+      input.shipper ?? null,
+      input.receiver ?? null,
       input.pickupLocation ?? null,
       input.deliveryLocation ?? null,
       input.referenceNumber ?? null,
@@ -159,8 +164,9 @@ export function searchLoads(filters: LoadFilters): Load[] {
     params.push(`%${filters.broker}%`);
   }
   if (filters.customer) {
-    clauses.push('customer_name LIKE ?');
-    params.push(`%${filters.customer}%`);
+    clauses.push('(shipper LIKE ? OR receiver LIKE ?)');
+    const like = `%${filters.customer}%`;
+    params.push(like, like);
   }
   if (filters.fromDate != null) {
     clauses.push('created_at >= ?');
@@ -172,10 +178,10 @@ export function searchLoads(filters: LoadFilters): Load[] {
   }
   if (filters.search) {
     clauses.push(
-      '(load_number LIKE ? OR customer_name LIKE ? OR broker_name LIKE ? OR reference_number LIKE ? OR pickup_location LIKE ? OR delivery_location LIKE ?)',
+      '(load_number LIKE ? OR shipper LIKE ? OR receiver LIKE ? OR broker_name LIKE ? OR reference_number LIKE ? OR pickup_location LIKE ? OR delivery_location LIKE ?)',
     );
     const like = `%${filters.search}%`;
-    params.push(like, like, like, like, like, like);
+    params.push(like, like, like, like, like, like, like);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';

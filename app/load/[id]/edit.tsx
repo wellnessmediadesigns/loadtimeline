@@ -14,7 +14,8 @@ export default function EditLoad() {
   const [form, setForm] = useState({
     loadNumber: existing?.loadNumber ?? '',
     brokerName: existing?.brokerName ?? '',
-    customerName: existing?.customerName ?? '',
+    shipper: existing?.shipper ?? '',
+    receiver: existing?.receiver ?? '',
     pickupLocation: existing?.pickupLocation ?? '',
     deliveryLocation: existing?.deliveryLocation ?? '',
     referenceNumber: existing?.referenceNumber ?? '',
@@ -41,7 +42,8 @@ export default function EditLoad() {
     updateLoad(existing.id, {
       loadNumber: clean(form.loadNumber),
       brokerName: clean(form.brokerName),
-      customerName: clean(form.customerName),
+      shipper: clean(form.shipper),
+      receiver: clean(form.receiver),
       pickupLocation: clean(form.pickupLocation),
       deliveryLocation: clean(form.deliveryLocation),
       referenceNumber: clean(form.referenceNumber),
@@ -70,8 +72,9 @@ export default function EditLoad() {
           </FormSection>
 
           <FormSection title="Parties" icon="people">
+            <Field label="Shipper" value={form.shipper} onChangeText={set('shipper')} placeholder="Pickup company" icon="arrow-up-circle" autoCapitalize="words" />
+            <Field label="Receiver" value={form.receiver} onChangeText={set('receiver')} placeholder="Delivery company" icon="arrow-down-circle" autoCapitalize="words" />
             <Field label="Broker Name" value={form.brokerName} onChangeText={set('brokerName')} icon="briefcase" autoCapitalize="words" />
-            <Field label="Customer Name" value={form.customerName} onChangeText={set('customerName')} icon="business" autoCapitalize="words" />
           </FormSection>
 
           <FormSection title="Driver Override" icon="person">
