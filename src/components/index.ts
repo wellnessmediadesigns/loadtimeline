@@ -3,6 +3,7 @@ export { BarChart } from './BarChart';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Chip } from './Chip';
+export { DemoBanner } from './DemoBanner';
 export { EmptyState } from './EmptyState';
 export { EventButton } from './EventButton';
 export { Field } from './Field';

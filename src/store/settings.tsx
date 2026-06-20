@@ -18,6 +18,7 @@ const KEYS = {
   driverName: 'lt.driverName',
   company: 'lt.company',
   phone: 'lt.phone',
+  demoMode: 'lt.demoMode',
 } as const;
 
 export interface DriverProfile {
@@ -33,11 +34,13 @@ interface SettingsState {
   isPro: boolean;
   reportsGenerated: number;
   profile: DriverProfile;
+  demoMode: boolean;
   setThemeMode: (mode: ThemeMode) => void;
   completeOnboarding: () => void;
   setPro: (value: boolean) => void;
   incrementReports: () => void;
   setProfile: (patch: Partial<DriverProfile>) => void;
+  setDemoMode: (value: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -49,6 +52,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [isPro, setIsPro] = useState(false);
   const [reportsGenerated, setReportsGenerated] = useState(0);
   const [profile, setProfileState] = useState<DriverProfile>({ driverName: '', company: '', phone: '' });
+  const [demoMode, setDemoModeState] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -61,12 +65,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           KEYS.driverName,
           KEYS.company,
           KEYS.phone,
+          KEYS.demoMode,
         ]);
         const map = Object.fromEntries(entries);
         if (map[KEYS.themeMode]) setThemeModeState(map[KEYS.themeMode] as ThemeMode);
         setOnboardingDone(map[KEYS.onboardingDone] === '1');
         setIsPro(map[KEYS.isPro] === '1');
         setReportsGenerated(Number(map[KEYS.reportsGenerated]) || 0);
+        setDemoModeState(map[KEYS.demoMode] === '1');
         setProfileState({
           driverName: map[KEYS.driverName] ?? '',
           company: map[KEYS.company] ?? '',
@@ -101,6 +107,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const setDemoMode = useCallback((value: boolean) => {
+    setDemoModeState(value);
+    AsyncStorage.setItem(KEYS.demoMode, value ? '1' : '0').catch(() => {});
+  }, []);
+
   const setProfile = useCallback((patch: Partial<DriverProfile>) => {
     setProfileState((prev) => {
       const next = { ...prev, ...patch };
@@ -119,11 +130,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       isPro,
       reportsGenerated,
       profile,
+      demoMode,
       setThemeMode,
       completeOnboarding,
       setPro,
       incrementReports,
       setProfile,
+      setDemoMode,
     }),
     [
       ready,
@@ -132,11 +145,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       isPro,
       reportsGenerated,
       profile,
+      demoMode,
       setThemeMode,
       completeOnboarding,
       setPro,
       incrementReports,
       setProfile,
+      setDemoMode,
     ],
   );
 

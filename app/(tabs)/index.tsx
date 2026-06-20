@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, EmptyState, HeroCard, LoadCard, Screen, SectionTitle, StatCard } from '@/components';
+import { Card, DemoBanner, EmptyState, HeroCard, LoadCard, Screen, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { countLoads, listLoads } from '@/db/queries/loads';
@@ -18,7 +18,7 @@ export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isPro, reportsGenerated, profile } = useSettings();
+  const { isPro, reportsGenerated, profile, demoMode } = useSettings();
 
   const [active, setActive] = useState<Load[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
@@ -39,6 +39,7 @@ export default function Dashboard() {
 
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
+      {demoMode ? <DemoBanner /> : null}
       <HeroCard
         onNewLoad={onNewLoad}
         freeRemaining={isPro ? null : FREE_LOAD_LIMIT - countLoads()}

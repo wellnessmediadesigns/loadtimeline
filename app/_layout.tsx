@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider, useSettings } from '@/store/settings';
 import { ThemeProvider, useTheme } from '@/theme/theme';
-import { runMigrations } from '@/db/client';
+import { runMigrations, setDemoMode } from '@/db/client';
 
 /** Redirects to onboarding until it has been completed. */
 function useOnboardingGate(dbReady: boolean) {
@@ -26,9 +26,21 @@ function useOnboardingGate(dbReady: boolean) {
   }, [ready, dbReady, onboardingDone, segments, router]);
 }
 
-function RootNavigator({ dbReady }: { dbReady: boolean }) {
+function RootNavigator() {
   const t = useTheme();
-  const { ready } = useSettings();
+  const { ready, demoMode } = useSettings();
+  const [dbReady, setDbReady] = useState(false);
+
+  // Initialize the datastore once settings are loaded, honoring the persisted
+  // demo flag so a relaunch in demo mode stays in demo (and the right DB is
+  // active+migrated before any screen queries).
+  useEffect(() => {
+    if (!ready) return;
+    setDemoMode(demoMode);
+    runMigrations();
+    setDbReady(true);
+  }, [ready, demoMode]);
+
   useOnboardingGate(dbReady);
 
   if (!ready || !dbReady) {
@@ -61,22 +73,12 @@ function RootNavigator({ dbReady }: { dbReady: boolean }) {
 }
 
 export default function RootLayout() {
-  const [dbReady, setDbReady] = useState(false);
-
-  useEffect(() => {
-    try {
-      runMigrations();
-    } finally {
-      setDbReady(true);
-    }
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SettingsProvider>
           <ThemeProvider>
-            <RootNavigator dbReady={dbReady} />
+            <RootNavigator />
           </ThemeProvider>
         </SettingsProvider>
       </SafeAreaProvider>
