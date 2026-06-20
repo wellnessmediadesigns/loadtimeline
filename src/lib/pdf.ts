@@ -5,8 +5,9 @@
  */
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { brand } from '@/theme/colors';
-import { computeDetention, detentionLevel, DetentionLevel, onSiteLevel, StopDetention } from './detention';
+import { File, Paths } from 'expo-file-system';
+import { brand, lightColors } from '@/theme/colors';
+import { computeDetention, detentionLevel, DetentionLevel } from './detention';
 import { detentionText, formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
 import { toDataUri } from './photos';
 import { EVENT_META, INCIDENT_META, SEVERITY_LABEL, STOP_META, STOP_ORDER } from '@/types/catalog';
@@ -98,8 +99,8 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     )
     .join('');
 
-  const statCard = (label: string, value: string, level?: DetentionLevel) =>
-    `<div class="stat${level ? ` lvl-${level}` : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
+  const statCard = (label: string, value: string, level?: DetentionLevel, emph?: boolean) =>
+    `<div class="stat${level ? ` lvl-${level}` : ''}${emph ? ' emph' : ''}"><div class="stat-v">${esc(value)}</div><div class="stat-l">${esc(label)}</div></div>`;
 
   const eventRow = (e: LoadEvent, isLast: boolean) => {
     const meta = EVENT_META[e.type];
@@ -143,10 +144,10 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
         ${span ? `<div class="sc-span">${span}</div>` : ''}
       </div>
       <div class="stopcard-stats">
-        ${statCard('Time On Site', formatDuration(sd.onSiteMs), onSiteLevel(sd.onSiteMs))}
-        ${statCard('Wait Time', formatDuration(sd.waitMs), onSiteLevel(sd.waitMs))}
+        ${statCard('Time On Site', formatDuration(sd.onSiteMs))}
+        ${statCard('Wait Time', formatDuration(sd.waitMs))}
         ${statCard(meta.serviceLabel, formatDuration(sd.serviceMs))}
-        ${statCard('Potential Detention', detentionText(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs))}
+        ${statCard('Detention', detentionText(sd.potentialDetentionMs), detentionLevel(sd.potentialDetentionMs), sd.potentialDetentionMs > 0)}
       </div>
       <div class="stopcard-tl">${stopEvents.map((e, i) => eventRow(e, i === stopEvents.length - 1)).join('')}</div>
     </div>`;
@@ -163,10 +164,11 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const stopsHtml = STOP_ORDER.filter(includeStop).map(stopCardHtml).join('')
     || '<div class="muted">No events recorded for the selected stops.</div>';
 
+  const freeHours = detention.pickup.freeMinutes / 60;
   const detentionFootHtml = anyDetention
     ? `<div class="det-foot">
-        ${showPickupDet && showDeliveryDet ? `<div class="combined">${scopedDetentionMs > 0 ? `Combined potential detention: <b class="det">${formatDuration(scopedDetentionMs)}</b>` : '<b class="ok">No detention incurred</b> across either stop.'}</div>` : ''}
-        <div class="muted small">Free window: ${detention.pickup.freeMinutes / 60}h per stop. Potential detention is time on site beyond the free window.</div>
+        ${showPickupDet && showDeliveryDet ? `<div class="combined">${scopedDetentionMs > 0 ? `Combined detention: <b class="det">${formatDuration(scopedDetentionMs)}</b>` : '<b class="ok">No detention incurred</b> across either stop.'}</div>` : ''}
+        <div class="muted small">Free window: ${freeHours}h per stop. Detention is time on site beyond the free window.</div>
       </div>`
     : '';
 
@@ -181,13 +183,20 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   const tripOnSiteMs =
     (showPickupDet ? detention.pickup.onSiteMs ?? 0 : 0) + (showDeliveryDet ? detention.delivery.onSiteMs ?? 0 : 0);
 
+  const detentionHeadlineHtml = tripStart != null && anyDetention
+    ? scopedDetentionMs > 0
+      ? `<div class="det-headline"><b>${formatDuration(scopedDetentionMs)} detention</b> beyond the ${freeHours}h free window.</div>`
+      : `<div class="det-headline ok">No detention incurred — within the ${freeHours}h free window.</div>`
+    : '';
+
   const tripBandHtml = tripStart != null
     ? `<div class="tripband">
         <div class="stats">
           ${statCard('Total Trip', formatDuration(tripMs))}
-          ${statCard('Combined On Site', formatDuration(tripOnSiteMs), onSiteLevel(tripOnSiteMs))}
-          ${statCard('Potential Detention', detentionText(scopedDetentionMs), detentionLevel(scopedDetentionMs))}
+          ${statCard('Combined On Site', formatDuration(tripOnSiteMs))}
+          ${statCard('Detention', detentionText(scopedDetentionMs), detentionLevel(scopedDetentionMs), scopedDetentionMs > 0)}
         </div>
+        ${detentionHeadlineHtml}
         <div class="trip-sub">Arrived ${esc(formatDateTime(tripStart))} ${tripOngoing ? '· on site now' : `&rarr; Departed ${esc(formatDateTime(tripEnd))}`}</div>
       </div>`
     : '';
@@ -240,9 +249,9 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @page { size: letter; margin: 0; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #111827; font-size: 13px; }
   .content { padding: 22px 32px 40px; }
 
@@ -270,7 +279,7 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   .hgen { font-size: 10px; color: #94A3B8; margin-top: 6px; }
 
   /* Sections */
-  .section { margin-top: 22px; page-break-inside: avoid; }
+  .section { margin-top: 22px; }
   .section.tight { margin-top: 16px; }
   h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: ${brand.navy}; margin: 0 0 11px; display: flex; align-items: center; gap: 8px; }
   h2:before { content: ''; width: 3px; height: 14px; background: ${accent}; border-radius: 2px; display: inline-block; }
@@ -292,23 +301,30 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
   .stat.lvl-watch .stat-v { color: ${brand.warning}; }
   .stat.lvl-significant { border-top-color: ${brand.danger}; }
   .stat.lvl-significant .stat-v { color: ${brand.danger}; }
+  .stat.emph.lvl-watch { background: ${lightColors.warningSoft}; border-color: ${brand.warning}; }
+  .stat.emph.lvl-significant { background: ${lightColors.dangerSoft}; border-color: ${brand.danger}; }
 
   /* Trip band */
   .tripband { background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 14px; padding: 14px; }
   .tripband .stat { background: #fff; }
-  .trip-sub { font-size: 11.5px; color: #475569; margin-top: 11px; font-weight: 600; text-align: center; }
+  .tripband .stat.emph.lvl-watch { background: ${lightColors.warningSoft}; }
+  .tripband .stat.emph.lvl-significant { background: ${lightColors.dangerSoft}; }
+  .det-headline { margin-top: 12px; text-align: center; font-size: 14px; color: ${brand.danger}; }
+  .det-headline b { font-weight: 800; }
+  .det-headline.ok { color: ${brand.success}; }
+  .trip-sub { font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600; text-align: center; }
 
   /* Stop cards (detention + timeline consolidated) */
-  .stopcard { border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; margin-bottom: 16px; page-break-inside: avoid; }
+  .stopcard { border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
   .stopcard-head { background: ${brand.navy}; border-left: 4px solid ${accent}; color: #fff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: baseline; }
   .sc-name { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
   .sc-loc { font-size: 12px; color: #CBD5E1; font-weight: 600; margin-left: 8px; }
   .sc-span { font-size: 10.5px; color: #94A3B8; font-weight: 600; }
-  .stopcard-stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #EEF1F5; background: #FBFCFE; }
+  .stopcard-stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #EEF1F5; background: #FBFCFE; page-break-inside: avoid; }
   .stopcard-tl { padding: 6px 14px 4px; }
 
   /* Timeline rail */
-  .tl-row { display: flex; gap: 12px; }
+  .tl-row { display: flex; gap: 12px; page-break-inside: avoid; }
   .tl-rail { position: relative; width: 12px; flex: none; }
   .tl-rail:before { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: #E5E7EB; }
   .tl-row.tl-last .tl-rail:before { bottom: auto; height: 16px; }
@@ -412,7 +428,18 @@ export async function generateReport(
   const html = buildHtml(loadId, opts);
   if (!html) throw new Error('Load not found');
   const { uri } = await Print.printToFileAsync({ html, base64: false });
-  return { uri };
+
+  // Rename the temp file so the share sheet / saved file shows a real name.
+  try {
+    const load = getLoad(loadId);
+    const slug = (load?.loadNumber || loadId).replace(/[^A-Za-z0-9._-]+/g, '-');
+    const dest = new File(Paths.cache, `LoadTimeline-${slug}.pdf`);
+    if (dest.exists) dest.delete();
+    new File(uri).move(dest);
+    return { uri: dest.uri };
+  } catch {
+    return { uri };
+  }
 }
 
 /** Builds the PDF and opens the native share sheet (share/email/save/print). */
