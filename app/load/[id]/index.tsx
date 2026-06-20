@@ -114,7 +114,10 @@ export default function ActiveLoad() {
     );
   }
 
-  const subtitle = [load.customerName, load.brokerName].filter(Boolean).join(' · ') || undefined;
+  const subtitle =
+    [[load.shipper, load.receiver].filter(Boolean).join(' → ') || null, load.brokerName]
+      .filter(Boolean)
+      .join(' · ') || undefined;
   const stopLocation = stop === 'pickup' ? load.pickupLocation : load.deliveryLocation;
 
   return (

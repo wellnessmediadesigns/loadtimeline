@@ -11,7 +11,8 @@ export default function NewLoad() {
   const [form, setForm] = useState({
     loadNumber: '',
     brokerName: '',
-    customerName: '',
+    shipper: '',
+    receiver: '',
     pickupLocation: '',
     deliveryLocation: '',
     referenceNumber: '',
@@ -30,7 +31,8 @@ export default function NewLoad() {
     const load = createLoad({
       loadNumber: clean(form.loadNumber),
       brokerName: clean(form.brokerName),
-      customerName: clean(form.customerName),
+      shipper: clean(form.shipper),
+      receiver: clean(form.receiver),
       pickupLocation: clean(form.pickupLocation),
       deliveryLocation: clean(form.deliveryLocation),
       referenceNumber: clean(form.referenceNumber),
@@ -65,8 +67,9 @@ export default function NewLoad() {
           </FormSection>
 
           <FormSection title="Parties" icon="people">
+            <Field label="Shipper" value={form.shipper} onChangeText={set('shipper')} placeholder="Pickup company" icon="arrow-up-circle" autoCapitalize="words" />
+            <Field label="Receiver" value={form.receiver} onChangeText={set('receiver')} placeholder="Delivery company" icon="arrow-down-circle" autoCapitalize="words" />
             <Field label="Broker Name" value={form.brokerName} onChangeText={set('brokerName')} placeholder="Broker / 3PL" icon="briefcase" autoCapitalize="words" />
-            <Field label="Customer Name" value={form.customerName} onChangeText={set('customerName')} placeholder="Shipper / receiver" icon="business" autoCapitalize="words" />
           </FormSection>
 
           <FormSection title="Driver Override" icon="person">

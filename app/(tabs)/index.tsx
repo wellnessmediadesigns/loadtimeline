@@ -104,7 +104,7 @@ export default function Dashboard() {
                       {meta?.label}
                       <Text style={{ color: t.colors.textSecondary }}>
                         {'  ·  '}
-                        {a.loadNumber ? `Load ${a.loadNumber}` : a.customerName ?? 'Load'}
+                        {a.loadNumber ? `Load ${a.loadNumber}` : a.shipper ?? 'Load'}
                       </Text>
                     </Text>
                     <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>

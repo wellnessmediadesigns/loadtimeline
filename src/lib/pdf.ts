@@ -30,7 +30,7 @@ export type ReportStops = 'pickup' | 'delivery' | 'both';
 export interface ReportFields {
   driver: boolean;
   broker: boolean;
-  customer: boolean;
+  parties: boolean;
   reference: boolean;
   trailer: boolean;
   status: boolean;
@@ -40,7 +40,7 @@ export interface ReportFields {
 export const DEFAULT_REPORT_FIELDS: ReportFields = {
   driver: true,
   broker: true,
-  customer: true,
+  parties: true,
   reference: true,
   trailer: true,
   status: true,
@@ -78,7 +78,8 @@ function buildHtml(loadId: string, opts: ReportOptions): string | null {
     ...(f.driver ? ([['Driver', opts.driverName ?? null]] as [string, string | null][]) : []),
     ...(f.driver ? ([['Company', opts.company ?? null]] as [string, string | null][]) : []),
     ...(f.broker ? ([['Broker', load.brokerName]] as [string, string | null][]) : []),
-    ...(f.customer ? ([['Customer', load.customerName]] as [string, string | null][]) : []),
+    ...(f.parties ? ([['Shipper', load.shipper]] as [string, string | null][]) : []),
+    ...(f.parties ? ([['Receiver', load.receiver]] as [string, string | null][]) : []),
     ...(f.reference ? ([['Reference #', load.referenceNumber]] as [string, string | null][]) : []),
     ...(f.trailer ? ([['Trailer #', load.trailerNumber]] as [string, string | null][]) : []),
     ...(f.status ? ([['Status', load.status === 'active' ? 'Active' : 'Completed']] as [string, string | null][]) : []),

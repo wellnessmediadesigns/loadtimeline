@@ -22,7 +22,7 @@ const STOP_OPTIONS: { value: ReportStops; label: string }[] = [
 const FIELD_OPTIONS: { key: keyof ReportFields; label: string }[] = [
   { key: 'driver', label: 'Driver & company' },
   { key: 'broker', label: 'Broker name' },
-  { key: 'customer', label: 'Customer name' },
+  { key: 'parties', label: 'Shipper & receiver' },
   { key: 'reference', label: 'Reference number' },
   { key: 'trailer', label: 'Trailer number' },
   { key: 'status', label: 'Load status' },

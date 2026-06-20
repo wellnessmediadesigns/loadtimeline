@@ -93,6 +93,13 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
     d.execSync(`ALTER TABLE loads ADD COLUMN driver_name TEXT;`);
     d.execSync(`ALTER TABLE loads ADD COLUMN company TEXT;`);
   },
+  // v4 — split the single customer into distinct shipper + receiver parties
+  (d) => {
+    d.execSync(`ALTER TABLE loads ADD COLUMN shipper TEXT;`);
+    d.execSync(`ALTER TABLE loads ADD COLUMN receiver TEXT;`);
+    // Preserve any existing customer value as the shipper.
+    d.execSync(`UPDATE loads SET shipper = customer_name WHERE customer_name IS NOT NULL AND customer_name != '';`);
+  },
 ];
 
 /** Applies any pending migrations using PRAGMA user_version. */
