@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { AppHeader, Button, Chip, Field, PhotoGrid, Screen } from '@/components';
+import { AppHeader, Button, Chip, Field, FormSection, PhotoGrid, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { addIncident, deleteIncident, listIncidents, setIncidentGeo, updateIncident } from '@/db/queries/incidents';
 import { deletePhoto, listPhotos } from '@/db/queries/photos';
@@ -11,6 +11,11 @@ import { INCIDENT_CATALOG, SEVERITY_LABEL } from '@/types/catalog';
 import type { IncidentType, Photo, Severity } from '@/types';
 
 const SEVERITIES: Severity[] = ['low', 'medium', 'high'];
+const SEVERITY_TONE: Record<Severity, 'success' | 'warning' | 'danger'> = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+};
 
 /**
  * Incident editor. Creates a draft incident on open so photos can attach
@@ -129,32 +134,37 @@ export default function IncidentScreen() {
     <View style={{ flex: 1 }}>
       <AppHeader title="Document Incident" closeIcon back={false} right={<Text onPress={onCancel} style={[t.typography.label, { color: t.colors.accent }]}>Cancel</Text>} />
       <Screen footer={<Button label="Save Incident" icon="checkmark" size="lg" onPress={onSave} disabled={!ready} />}>
-        <View style={{ gap: 18 }}>
-          <View style={{ gap: 8 }}>
-            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>TYPE</Text>
+        <View style={{ gap: 16 }}>
+          <FormSection title="Type" icon="pricetag">
             <View style={styles.chips}>
               {INCIDENT_CATALOG.map((i) => (
                 <Chip key={i.type} label={i.label} icon={i.icon} selected={type === i.type} onPress={() => setType(i.type)} />
               ))}
             </View>
-          </View>
+          </FormSection>
 
-          <Field label="Title" value={title} onChangeText={setTitle} placeholder="Short summary" optional={false} />
-          <Field label="Notes" value={notes} onChangeText={setNotes} placeholder="What happened? Be specific." multiline />
+          <FormSection title="Details" icon="document-text">
+            <Field label="Title" value={title} onChangeText={setTitle} placeholder="Short summary" icon="text" />
+            <Field label="Notes" value={notes} onChangeText={setNotes} placeholder="What happened? Be specific." multiline />
+          </FormSection>
 
-          <View style={{ gap: 8 }}>
-            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>SEVERITY</Text>
+          <FormSection title="Severity" icon="alert-circle">
             <View style={styles.chips}>
               {SEVERITIES.map((s) => (
-                <Chip key={s} label={SEVERITY_LABEL[s]} selected={severity === s} onPress={() => setSeverity(s)} />
+                <Chip
+                  key={s}
+                  label={SEVERITY_LABEL[s]}
+                  selected={severity === s}
+                  color={t.colors[SEVERITY_TONE[s]]}
+                  onPress={() => setSeverity(s)}
+                />
               ))}
             </View>
-          </View>
+          </FormSection>
 
-          <View style={{ gap: 8 }}>
-            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>PHOTOS</Text>
+          <FormSection title="Photos" icon="camera">
             <PhotoGrid photos={photos} onAddCamera={onCamera} onAddLibrary={onLibrary} onRemove={onRemovePhoto} busy={busy} />
-          </View>
+          </FormSection>
         </View>
       </Screen>
     </View>
