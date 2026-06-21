@@ -48,7 +48,7 @@ export function HeroCard({ onNewLoad, freeRemaining, freeLimit, greetingName, me
       <View style={{ gap: 4, marginTop: 16 }}>
         <Text style={[t.typography.overline, styles.greeting]}>{greeting.toUpperCase()}</Text>
         <Text style={[t.typography.hero, styles.title]}>LoadTimeline</Text>
-        <Text style={[t.typography.subtitle, { color: OF_CYAN }]}>If It Happened, Prove It.</Text>
+        <Text style={[t.typography.subtitle, { color: OF_CYAN }]}>Documentation Made Simple</Text>
       </View>
 
       {strip.length ? (

@@ -1,6 +1,6 @@
 # LoadTimeline
 
-**If It Happened, Prove It.**
+**Documentation Made Simple**
 Professional Load Documentation — _A Product by Organized Freight_ ([OrganizedFreight.com](https://OrganizedFreight.com))
 
 LoadTimeline helps truck drivers, owner-operators, dispatchers, and freight brokers create

@@ -136,7 +136,7 @@ function dashboard() {
   s += ofMark(20, y, 20);
   s += txt(48, y + 14, 'Organized Freight', { size: 13, weight: 700, fill: C.sec });
   s += txt(20, y + 46, 'LoadTimeline', { size: 30, weight: 800 });
-  s += txt(20, y + 68, 'If It Happened, Prove It.', { size: 14, weight: 600, fill: C.accent });
+  s += txt(20, y + 68, 'Documentation Made Simple', { size: 14, weight: 600, fill: C.accent });
 
   // stat grid 2 cols x 3
   const gx = 20, gw = (W - 40 - 10) / 2, gh = 88;
@@ -373,7 +373,7 @@ function report() {
   s += ofMark(52, y + 28, 16, '#3B82F6');
   s += txt(76, y + 36, 'ORGANIZED FREIGHT', { size: 9, weight: 700, fill: '#94A3B8', ls: 1 });
   s += txt(52, y + 60, 'LoadTimeline Report', { size: 18, weight: 700, fill: C.white });
-  s += txt(52, y + 80, 'If It Happened, Prove It.', { size: 11, weight: 600, fill: '#60A5FA' });
+  s += txt(52, y + 80, 'Documentation Made Simple', { size: 11, weight: 600, fill: '#60A5FA' });
 
   // include stops
   let sy = 232;

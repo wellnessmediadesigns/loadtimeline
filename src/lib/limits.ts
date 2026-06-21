@@ -5,7 +5,7 @@ export const PRO_PRICE = '$6.99';
 
 export const APP_INFO = {
   name: 'LoadTimeline',
-  tagline: 'If It Happened, Prove It.',
+  tagline: 'Documentation Made Simple',
   subtitle: 'Professional Load Documentation',
   brand: 'Organized Freight',
   website: 'OrganizedFreight.com',
