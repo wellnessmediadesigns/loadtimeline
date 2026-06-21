@@ -100,7 +100,7 @@ export default function ReportScreen() {
           <View style={[styles.badge, { backgroundColor: t.colors.navy }]}>
             <Text style={[t.typography.caption, { color: '#94A3B8' }]}>ORGANIZED FREIGHT</Text>
             <Text style={[t.typography.heading, { color: '#fff' }]}>LoadTimeline Report</Text>
-            <Text style={[t.typography.caption, { color: '#60A5FA' }]}>If It Happened, Prove It.</Text>
+            <Text style={[t.typography.caption, { color: '#60A5FA' }]}>Documentation Made Simple</Text>
           </View>
           <Text style={[t.typography.body, { color: t.colors.textSecondary, textAlign: 'center' }]}>
             Professional, branded PDF — share, email, print or save.
