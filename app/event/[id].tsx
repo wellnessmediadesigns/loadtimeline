@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { AppHeader, Button, Card, Field, PhotoGrid, Screen } from '@/components';
+import { AppHeader, Button, EmptyState, Field, FormSection, PhotoGrid, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { deleteEvent, getEvent, updateEventNotes } from '@/db/queries/events';
 import { listPhotos, deletePhoto } from '@/db/queries/photos';
-import { capturePhoto, pickPhotos, removePhotoFiles } from '@/lib/photos';
+import { capturePhoto, pickPhotos, removePhotoFiles, purgePhotosFor } from '@/lib/photos';
 import { EVENT_META } from '@/types/catalog';
 import { formatDateTime, shortCoords } from '@/lib/format';
 import type { LoadEvent, Photo } from '@/types';
@@ -34,7 +34,9 @@ export default function EventEditor() {
     return (
       <View style={{ flex: 1 }}>
         <AppHeader title="Event" closeIcon />
-        <Screen><Text style={[t.typography.body, { color: t.colors.textSecondary }]}>Event not found.</Text></Screen>
+        <Screen>
+          <EmptyState icon="alert-circle-outline" title="Event not found" message="This event may have been deleted." />
+        </Screen>
       </View>
     );
   }
@@ -80,6 +82,7 @@ export default function EventEditor() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
+          purgePhotosFor('event', event.id);
           deleteEvent(event.id);
           router.back();
         },
@@ -92,22 +95,22 @@ export default function EventEditor() {
       <AppHeader title={meta?.label ?? 'Event'} subtitle={formatDateTime(event.timestamp)} closeIcon />
       <Screen footer={<Button label="Save" icon="checkmark" size="lg" onPress={save} />}>
         <View style={{ gap: 16 }}>
-          <Card style={{ gap: 4 }}>
-            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>LOCATION</Text>
+          <FormSection title="Location" icon="location">
             <Text style={[t.typography.body, { color: t.colors.text }]}>
               {event.address ?? 'No address captured'}
             </Text>
             {coords ? (
-              <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>GPS: {coords}</Text>
+              <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>GPS {coords}</Text>
             ) : null}
-          </Card>
+          </FormSection>
 
-          <Field label="Notes" value={notes} onChangeText={setNotes} placeholder="Add details about this event" multiline />
+          <FormSection title="Notes" icon="create">
+            <Field label="Event notes" value={notes} onChangeText={setNotes} placeholder="Add details about this event" multiline />
+          </FormSection>
 
-          <View style={{ gap: 8 }}>
-            <Text style={[t.typography.label, { color: t.colors.textSecondary }]}>PHOTOS</Text>
+          <FormSection title="Photos" icon="camera">
             <PhotoGrid photos={photos} onAddCamera={onCamera} onAddLibrary={onLibrary} onRemove={onRemovePhoto} busy={busy} />
-          </View>
+          </FormSection>
 
           <Button label="Delete Event" icon="trash" variant="ghost" onPress={onDelete} />
         </View>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { AppHeader, Button, Card, Chip, Screen } from '@/components';
+import { AppHeader, Button, Card, Chip, EmptyState, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { getLoad } from '@/db/queries/loads';
@@ -48,7 +48,9 @@ export default function ReportScreen() {
     return (
       <View style={{ flex: 1 }}>
         <AppHeader title="Report" />
-        <Screen><Text style={[t.typography.body, { color: t.colors.textSecondary }]}>Load not found.</Text></Screen>
+        <Screen>
+          <EmptyState icon="document-outline" title="Load not found" message="This load may have been deleted." />
+        </Screen>
       </View>
     );
   }

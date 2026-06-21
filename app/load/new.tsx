@@ -3,11 +3,14 @@ import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppHeader, Button, Field, FormSection, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
-import { createLoad } from '@/db/queries/loads';
+import { useSettings } from '@/store/settings';
+import { createLoad, countLoads } from '@/db/queries/loads';
+import { canCreateLoad } from '@/lib/limits';
 
 export default function NewLoad() {
   const router = useRouter();
   const t = useTheme();
+  const { isPro } = useSettings();
   const [form, setForm] = useState({
     loadNumber: '',
     brokerName: '',
@@ -28,6 +31,11 @@ export default function NewLoad() {
   const clean = (v: string) => (v.trim() ? v.trim() : null);
 
   const onCreate = () => {
+    // Defense-in-depth: enforce the free-load cap here too, not just on the dashboard.
+    if (!canCreateLoad(isPro, countLoads())) {
+      router.replace('/paywall');
+      return;
+    }
     const load = createLoad({
       loadNumber: clean(form.loadNumber),
       brokerName: clean(form.brokerName),

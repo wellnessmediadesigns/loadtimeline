@@ -122,7 +122,12 @@ export default function Settings() {
               Load 19 example loads to try every feature.
             </Text>
           </View>
-          <Switch value={demoMode} onValueChange={onToggleDemo} />
+          <Switch
+            value={demoMode}
+            onValueChange={onToggleDemo}
+            trackColor={{ true: t.colors.accent, false: t.colors.border }}
+            thumbColor="#FFFFFF"
+          />
         </View>
         <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
           Your real data is saved and untouched — turn this off anytime to return to it.

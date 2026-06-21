@@ -56,11 +56,32 @@ export interface ImportResult {
   photos: number;
 }
 
+// Whitelist of importable columns per table — guards against a hand-edited /
+// malicious backup file injecting unexpected SQL via column names.
+const ALLOWED_COLUMNS: Record<string, Set<string>> = {
+  loads: new Set([
+    'id', 'load_number', 'broker_name', 'customer_name', 'shipper', 'receiver',
+    'pickup_location', 'delivery_location', 'reference_number', 'trailer_number',
+    'driver_notes', 'driver_name', 'company', 'status', 'created_at', 'updated_at',
+  ]),
+  events: new Set([
+    'id', 'load_id', 'stop', 'type', 'timestamp', 'latitude', 'longitude', 'address', 'notes', 'created_at',
+  ]),
+  incidents: new Set([
+    'id', 'load_id', 'type', 'title', 'notes', 'timestamp', 'latitude', 'longitude', 'address', 'severity', 'created_at',
+  ]),
+  photos: new Set([
+    'id', 'parent_type', 'parent_id', 'uri', 'thumb_uri', 'width', 'height', 'created_at',
+  ]),
+};
+
 function insertIgnore(table: string, rows: Record<string, unknown>[]): number {
   const db = getDb();
+  const allowed = ALLOWED_COLUMNS[table];
+  if (!allowed) return 0;
   let count = 0;
   for (const row of rows) {
-    const cols = Object.keys(row);
+    const cols = Object.keys(row).filter((c) => allowed.has(c));
     if (cols.length === 0) continue;
     const placeholders = cols.map(() => '?').join(', ');
     const values = cols.map((c) => row[c] as string | number | null);

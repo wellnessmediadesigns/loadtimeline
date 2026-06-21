@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/theme/theme';
 
 interface ChipProps {
@@ -15,9 +16,15 @@ interface ChipProps {
 export function Chip({ label, selected, onPress, icon, color }: ChipProps) {
   const t = useTheme();
   const selectedColor = color ?? t.colors.accent;
+  const handlePress = onPress
+    ? () => {
+        Haptics.selectionAsync().catch(() => {});
+        onPress();
+      }
+    : undefined;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={({ pressed }) => [
         styles.chip,
         {
