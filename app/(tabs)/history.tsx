@@ -34,6 +34,15 @@ export default function History() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, status, allLoads]);
 
+  const counts = useMemo(
+    () => ({
+      all: allLoads.length,
+      active: allLoads.filter((l) => l.status === 'active').length,
+      completed: allLoads.filter((l) => l.status === 'completed').length,
+    }),
+    [allLoads],
+  );
+
   return (
     <Screen contentStyle={{ paddingTop: insets.top + 8 }}>
       <ScreenHeading title="History" subtitle="Searchable archive of every load." icon="time" />
@@ -55,9 +64,9 @@ export default function History() {
       </View>
 
       <View style={styles.chips}>
-        <Chip label="All" selected={status === 'all'} onPress={() => setStatus('all')} />
-        <Chip label="Active" selected={status === 'active'} onPress={() => setStatus('active')} />
-        <Chip label="Completed" selected={status === 'completed'} onPress={() => setStatus('completed')} />
+        <Chip label={`All ${counts.all}`} selected={status === 'all'} onPress={() => setStatus('all')} />
+        <Chip label={`Active ${counts.active}`} selected={status === 'active'} onPress={() => setStatus('active')} />
+        <Chip label={`Completed ${counts.completed}`} selected={status === 'completed'} onPress={() => setStatus('completed')} />
       </View>
 
       <SectionTitle title={`${results.length} ${results.length === 1 ? 'Load' : 'Loads'}`} />
