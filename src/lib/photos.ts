@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { Directory, File, Paths } from 'expo-file-system';
 import { newId } from '@/db/client';
-import { addPhoto, type PhotoInput } from '@/db/queries/photos';
+import { addPhoto, deletePhoto, listPhotos, listPhotosForLoad, type PhotoInput } from '@/db/queries/photos';
 import type { Photo, PhotoParent } from '@/types';
 
 const FULL_MAX_WIDTH = 1600;
@@ -121,6 +121,22 @@ export function removePhotoFiles(photo: Photo): void {
       // best-effort cleanup
     }
   }
+}
+
+/** Deletes a photo's files AND its DB row. */
+export function purgePhoto(photo: Photo): void {
+  removePhotoFiles(photo);
+  deletePhoto(photo.id);
+}
+
+/** Removes every photo (files + rows) attached to an event or incident. */
+export function purgePhotosFor(parentType: PhotoParent, parentId: string): void {
+  for (const p of listPhotos(parentType, parentId)) purgePhoto(p);
+}
+
+/** Removes every photo (files + rows) belonging to a load's events & incidents. */
+export function purgeLoadPhotos(loadId: string): void {
+  for (const p of listPhotosForLoad(loadId)) purgePhoto(p);
 }
 
 /** Reads a stored image as a base64 data URI for embedding in PDF reports. */

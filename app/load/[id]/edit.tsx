@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AppHeader, Button, Field, FormSection, Screen } from '@/components';
+import { AppHeader, Button, EmptyState, Field, FormSection, Screen } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { getLoad, updateLoad } from '@/db/queries/loads';
 
@@ -29,7 +29,9 @@ export default function EditLoad() {
     return (
       <View style={{ flex: 1 }}>
         <AppHeader title="Edit Load" closeIcon />
-        <Screen><Text style={[t.typography.body, { color: t.colors.textSecondary }]}>Load not found.</Text></Screen>
+        <Screen>
+          <EmptyState icon="cube-outline" title="Load not found" message="This load may have been deleted." />
+        </Screen>
       </View>
     );
   }

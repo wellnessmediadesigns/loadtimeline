@@ -36,7 +36,7 @@ export function Field({
         style={[
           styles.inputRow,
           {
-            backgroundColor: t.colors.cardAlt,
+            backgroundColor: focused ? t.colors.accentSoft : t.colors.cardAlt,
             borderColor: focused ? t.colors.accent : 'transparent',
             borderRadius: t.radius.md,
             alignItems: multiline ? 'flex-start' : 'center',

@@ -21,6 +21,7 @@ import { addEvent, listEvents } from '@/db/queries/events';
 import { listIncidents } from '@/db/queries/incidents';
 import { listPhotos } from '@/db/queries/photos';
 import { captureGeo } from '@/lib/gps';
+import { purgeLoadPhotos } from '@/lib/photos';
 import { computeDetention, detentionLevel, onSiteLevel } from '@/lib/detention';
 import { formatDuration, detentionText } from '@/lib/format';
 import { eventsForStop, STOP_META, STOP_ORDER } from '@/types/catalog';
@@ -95,6 +96,7 @@ export default function ActiveLoad() {
               text: 'Delete',
               style: 'destructive',
               onPress: () => {
+                purgeLoadPhotos(id!);
                 deleteLoad(id!);
                 router.replace('/');
               },
@@ -109,7 +111,9 @@ export default function ActiveLoad() {
     return (
       <View style={{ flex: 1 }}>
         <AppHeader title="Load" />
-        <Screen><Text style={[t.typography.body, { color: t.colors.textSecondary }]}>Load not found.</Text></Screen>
+        <Screen>
+          <EmptyState icon="cube-outline" title="Load not found" message="This load may have been deleted." />
+        </Screen>
       </View>
     );
   }
