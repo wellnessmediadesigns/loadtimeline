@@ -5,7 +5,8 @@
  */
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
+import dayjs from 'dayjs';
 import { brand, lightColors } from '@/theme/colors';
 import { computeDetention, detentionLevel, DetentionLevel } from './detention';
 import { detentionText, formatDate, formatDateTime, formatDuration, formatTime, shortCoords } from './format';
@@ -15,6 +16,7 @@ import type { LoadEvent } from '@/types';
 import { getLoad } from '@/db/queries/loads';
 import { listEvents } from '@/db/queries/events';
 import { listIncidents } from '@/db/queries/incidents';
+import { addReport } from '@/db/queries/reports';
 import { listPhotos, listPhotosForLoad } from '@/db/queries/photos';
 
 function esc(value: string | null | undefined): string {
@@ -420,7 +422,15 @@ export interface GenerateResult {
   uri: string;
 }
 
-/** Builds the PDF and returns its local file uri. */
+function scopeLabelOf(stops: ReportStops | undefined): string {
+  return stops === 'pickup' ? 'Pickup only' : stops === 'delivery' ? 'Delivery only' : 'Pickup & Delivery';
+}
+
+/**
+ * Builds the PDF, saves a permanent copy to the Reports library (so it can be
+ * revisited/re-shared later — a true snapshot), records it, and returns the
+ * saved file uri.
+ */
 export async function generateReport(
   loadId: string,
   opts: ReportOptions = {},
@@ -429,22 +439,33 @@ export async function generateReport(
   if (!html) throw new Error('Load not found');
   const { uri } = await Print.printToFileAsync({ html, base64: false });
 
-  // Rename the temp file so the share sheet / saved file shows a real name.
+  const load = getLoad(loadId);
+  const title = load?.loadNumber ? `Load ${load.loadNumber}` : 'Load Documentation';
+  const slug = (load?.loadNumber || 'load').replace(/[^A-Za-z0-9._-]+/g, '-');
+
+  // Persist permanently under <documents>/reports and record it.
   try {
-    const load = getLoad(loadId);
-    const slug = (load?.loadNumber || loadId).replace(/[^A-Za-z0-9._-]+/g, '-');
-    const dest = new File(Paths.cache, `LoadTimeline-${slug}.pdf`);
+    const dir = new Directory(Paths.document, 'reports');
+    if (!dir.exists) dir.create({ intermediates: true });
+    const dest = new File(dir, `LoadTimeline-${slug}-${dayjs().format('YYYYMMDD-HHmm')}.pdf`);
     if (dest.exists) dest.delete();
     new File(uri).move(dest);
+    addReport({
+      loadId,
+      loadNumber: load?.loadNumber ?? null,
+      title,
+      scope: scopeLabelOf(opts.stops),
+      fileUri: dest.uri,
+    });
     return { uri: dest.uri };
   } catch {
+    // Fall back to the temp file if permanent storage fails.
     return { uri };
   }
 }
 
-/** Builds the PDF and opens the native share sheet (share/email/save/print). */
-export async function shareReport(loadId: string, opts: ReportOptions = {}): Promise<void> {
-  const { uri } = await generateReport(loadId, opts);
+/** Opens the native share sheet for an already-saved report file. */
+export async function shareReportFile(uri: string): Promise<void> {
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(uri, {
       mimeType: 'application/pdf',
@@ -454,9 +475,14 @@ export async function shareReport(loadId: string, opts: ReportOptions = {}): Pro
   }
 }
 
-/** Sends the generated PDF directly to the OS print dialog. */
+/** Builds + saves the PDF, then opens the native share sheet. */
+export async function shareReport(loadId: string, opts: ReportOptions = {}): Promise<void> {
+  const { uri } = await generateReport(loadId, opts);
+  await shareReportFile(uri);
+}
+
+/** Builds + saves the PDF, then sends it to the OS print dialog. */
 export async function printReport(loadId: string, opts: ReportOptions = {}): Promise<void> {
-  const html = buildHtml(loadId, opts);
-  if (!html) throw new Error('Load not found');
-  await Print.printAsync({ html });
+  const { uri } = await generateReport(loadId, opts);
+  await Print.printAsync({ uri });
 }

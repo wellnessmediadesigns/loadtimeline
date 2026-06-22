@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart, Card, EmptyState, Screen, ScreenHeading, SectionTitle, StatCard } from '@/components';
 import { useTheme } from '@/theme/theme';
-import { useSettings } from '@/store/settings';
 import {
   AdvancedAnalytics,
   AnalyticsSummary,
@@ -20,18 +19,16 @@ import type { IncidentType } from '@/types';
 export default function Analytics() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { reportsGenerated } = useSettings();
-
-  const [stats, setStats] = useState<AnalyticsSummary>(() => computeAnalytics(reportsGenerated));
+  const [stats, setStats] = useState<AnalyticsSummary>(() => computeAnalytics());
   const [adv, setAdv] = useState<AdvancedAnalytics>(() => computeAdvancedAnalytics());
   const [byType, setByType] = useState<{ type: IncidentType; count: number }[]>([]);
 
   useFocusEffect(
     useCallback(() => {
-      setStats(computeAnalytics(reportsGenerated));
+      setStats(computeAnalytics());
       setAdv(computeAdvancedAnalytics());
       setByType(countIncidentsByType());
-    }, [reportsGenerated]),
+    }, []),
   );
 
   const maxCount = byType.reduce((m, r) => Math.max(m, r.count), 0) || 1;

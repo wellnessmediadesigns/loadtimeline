@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { listLoads } from '@/db/queries/loads';
 import { listEvents } from '@/db/queries/events';
 import { countIncidents, countIncidentsByType } from '@/db/queries/incidents';
+import { countReports } from '@/db/queries/reports';
 import { computeDetention } from './detention';
 import { INCIDENT_META } from '@/types/catalog';
 
@@ -18,7 +19,7 @@ export interface AnalyticsSummary {
   totalHoursLoggedMs: number;
 }
 
-export function computeAnalytics(reportsGenerated: number): AnalyticsSummary {
+export function computeAnalytics(): AnalyticsSummary {
   const loads = listLoads();
   let detainedMs = 0;
   let facilitySum = 0;
@@ -48,7 +49,7 @@ export function computeAnalytics(reportsGenerated: number): AnalyticsSummary {
     completedLoads: loads.filter((l) => l.status === 'completed').length,
     hoursDetainedMs: detainedMs,
     incidentsRecorded: countIncidents(),
-    reportsGenerated,
+    reportsGenerated: countReports(),
     avgFacilityTimeMs: facilityCount > 0 ? facilitySum / facilityCount : null,
     mostCommonDelay,
     totalHoursLoggedMs: hoursLogged,

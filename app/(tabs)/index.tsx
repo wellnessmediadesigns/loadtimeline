@@ -18,18 +18,18 @@ export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isPro, reportsGenerated, profile, demoMode } = useSettings();
+  const { isPro, profile, demoMode } = useSettings();
 
   const [active, setActive] = useState<Load[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
-  const [stats, setStats] = useState(() => computeAnalytics(0));
+  const [stats, setStats] = useState(() => computeAnalytics());
 
   useFocusEffect(
     useCallback(() => {
       setActive(listLoads('active'));
       setActivity(recentActivity(6));
-      setStats(computeAnalytics(reportsGenerated));
-    }, [reportsGenerated]),
+      setStats(computeAnalytics());
+    }, []),
   );
 
   const onNewLoad = () => {
@@ -55,12 +55,12 @@ export default function Dashboard() {
       <View style={{ marginTop: 26 }}>
         <SectionTitle title="Overview" />
         <View style={styles.statGrid}>
-          <StatCard label="Active Loads" value={`${stats.activeLoads}`} icon="cube" tone="accent" />
-          <StatCard label="Completed" value={`${stats.completedLoads}`} icon="checkmark-done" tone="success" />
-          <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" tone="violet" />
-          <StatCard label="Hours Logged" value={formatHours(stats.totalHoursLoggedMs / 3600000)} icon="time" tone="teal" />
-          <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" tone={stats.incidentsRecorded > 0 ? 'warning' : 'neutral'} />
-          <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" tone={stats.hoursDetainedMs > 0 ? 'danger' : 'neutral'} />
+          <StatCard label="Active Loads" value={`${stats.activeLoads}`} icon="cube" tone="accent" onPress={() => router.push('/loads/active')} />
+          <StatCard label="Completed" value={`${stats.completedLoads}`} icon="checkmark-done" tone="success" onPress={() => router.push('/loads/completed')} />
+          <StatCard label="Reports" value={`${stats.reportsGenerated}`} icon="document-text" tone="violet" onPress={() => router.push('/reports')} />
+          <StatCard label="Hours Logged" value={formatHours(stats.totalHoursLoggedMs / 3600000)} icon="time" tone="teal" onPress={() => router.push('/loads/hours')} />
+          <StatCard label="Incidents" value={`${stats.incidentsRecorded}`} icon="warning" tone={stats.incidentsRecorded > 0 ? 'warning' : 'neutral'} onPress={() => router.push('/loads/incidents')} />
+          <StatCard label="Detention" value={formatHours(stats.hoursDetainedMs / 3600000)} icon="hourglass" tone={stats.hoursDetainedMs > 0 ? 'danger' : 'neutral'} onPress={() => router.push('/loads/detention')} />
         </View>
       </View>
 
