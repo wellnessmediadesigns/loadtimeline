@@ -79,6 +79,7 @@ export default function ActiveLoad() {
     const isActive = load.status === 'active';
     Alert.alert('Load Options', undefined, [
       { text: 'Edit Details', onPress: () => router.push(`/load/${id}/edit`) },
+      { text: 'Detention Payment', onPress: () => router.push(`/load/${id}/payment`) },
       {
         text: isActive ? 'Mark as Completed' : 'Reopen Load',
         onPress: () => {

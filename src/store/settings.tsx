@@ -19,7 +19,10 @@ const KEYS = {
   company: 'lt.company',
   phone: 'lt.phone',
   demoMode: 'lt.demoMode',
+  detentionRate: 'lt.detentionRate',
 } as const;
+
+export const DEFAULT_DETENTION_RATE = 50;
 
 export interface DriverProfile {
   driverName: string;
@@ -35,12 +38,14 @@ interface SettingsState {
   reportsGenerated: number;
   profile: DriverProfile;
   demoMode: boolean;
+  detentionRate: number;
   setThemeMode: (mode: ThemeMode) => void;
   completeOnboarding: () => void;
   setPro: (value: boolean) => void;
   incrementReports: () => void;
   setProfile: (patch: Partial<DriverProfile>) => void;
   setDemoMode: (value: boolean) => void;
+  setDetentionRate: (value: number) => void;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -53,6 +58,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [reportsGenerated, setReportsGenerated] = useState(0);
   const [profile, setProfileState] = useState<DriverProfile>({ driverName: '', company: '', phone: '' });
   const [demoMode, setDemoModeState] = useState(false);
+  const [detentionRate, setDetentionRateState] = useState(DEFAULT_DETENTION_RATE);
 
   useEffect(() => {
     (async () => {
@@ -66,6 +72,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           KEYS.company,
           KEYS.phone,
           KEYS.demoMode,
+          KEYS.detentionRate,
         ]);
         const map = Object.fromEntries(entries);
         if (map[KEYS.themeMode]) setThemeModeState(map[KEYS.themeMode] as ThemeMode);
@@ -73,6 +80,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setIsPro(map[KEYS.isPro] === '1');
         setReportsGenerated(Number(map[KEYS.reportsGenerated]) || 0);
         setDemoModeState(map[KEYS.demoMode] === '1');
+        if (map[KEYS.detentionRate]) setDetentionRateState(Number(map[KEYS.detentionRate]) || DEFAULT_DETENTION_RATE);
         setProfileState({
           driverName: map[KEYS.driverName] ?? '',
           company: map[KEYS.company] ?? '',
@@ -112,6 +120,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(KEYS.demoMode, value ? '1' : '0').catch(() => {});
   }, []);
 
+  const setDetentionRate = useCallback((value: number) => {
+    setDetentionRateState(value);
+    AsyncStorage.setItem(KEYS.detentionRate, String(value)).catch(() => {});
+  }, []);
+
   const setProfile = useCallback((patch: Partial<DriverProfile>) => {
     setProfileState((prev) => {
       const next = { ...prev, ...patch };
@@ -131,12 +144,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       reportsGenerated,
       profile,
       demoMode,
+      detentionRate,
       setThemeMode,
       completeOnboarding,
       setPro,
       incrementReports,
       setProfile,
       setDemoMode,
+      setDetentionRate,
     }),
     [
       ready,
@@ -146,12 +161,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       reportsGenerated,
       profile,
       demoMode,
+      detentionRate,
       setThemeMode,
       completeOnboarding,
       setPro,
       incrementReports,
       setProfile,
       setDemoMode,
+      setDetentionRate,
     ],
   );
 

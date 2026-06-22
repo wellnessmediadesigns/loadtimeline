@@ -240,6 +240,54 @@ function generate(db: ReturnType<typeof getDb>): void {
       for (const inc of incidents) insertIncident(db, loadId, inc.spec, inc.ts, inc.place);
     });
   });
+
+  seedPayments(db);
+}
+
+/** Adds varied detention-payment records (paid / partial / refused / pending). */
+function seedPayments(db: ReturnType<typeof getDb>): void {
+  const RATE = 50;
+  const loads = db.getAllSync<{ id: string }>(`SELECT id FROM loads ORDER BY created_at DESC`);
+  let i = 0;
+  db.withTransactionSync(() => {
+    for (const { id } of loads) {
+      const rows = db.getAllSync<{ stop: StopType; type: EventType; timestamp: number }>(
+        `SELECT stop, type, timestamp FROM events WHERE load_id = ?`,
+        [id],
+      );
+      const detMs = detentionMsFromRows(rows);
+      if (detMs <= 0) continue;
+      const anticipated = (detMs / 3_600_000) * RATE;
+      const variant = i % 4;
+      i++;
+      let status: string;
+      let amount: number | null;
+      if (variant === 0) { status = 'paid'; amount = Math.round(anticipated * 100) / 100; }
+      else if (variant === 1) { status = 'partial'; amount = Math.round(anticipated * 0.5 * 100) / 100; }
+      else if (variant === 2) { status = 'refused'; amount = 0; }
+      else { continue; } // pending — leave un-recorded
+      db.runSync(
+        `INSERT OR REPLACE INTO payments (load_id, rate, amount_paid, paid_hours, paid_rate, status, note, updated_at)
+         VALUES (?, NULL, ?, NULL, NULL, ?, NULL, ?)`,
+        [id, amount, status, Date.now()],
+      );
+    }
+  });
+}
+
+/** Mirror of computeStopDetention's "beyond free window" math for raw rows. */
+function detentionMsFromRows(rows: { stop: StopType; type: EventType; timestamp: number }[]): number {
+  const FREE = 120 * 60_000;
+  let total = 0;
+  for (const stop of ['pickup', 'delivery'] as StopType[]) {
+    const ev = rows.filter((r) => r.stop === stop);
+    const arrived = ev.find((e) => e.type === 'ARRIVED')?.timestamp;
+    const departed = ev.find((e) => e.type === 'DEPARTED')?.timestamp;
+    if (arrived != null && departed != null) {
+      total += Math.max(0, departed - arrived - FREE);
+    }
+  }
+  return total;
 }
 
 function insertLoad(

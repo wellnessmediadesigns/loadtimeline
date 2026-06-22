@@ -21,8 +21,15 @@ export default function Settings() {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { themeMode, setThemeMode, isPro, setPro, profile, setProfile, demoMode, setDemoMode } = useSettings();
+  const { themeMode, setThemeMode, isPro, setPro, profile, setProfile, demoMode, setDemoMode, detentionRate, setDetentionRate } = useSettings();
   const [busy, setBusy] = useState(false);
+  const [rateStr, setRateStr] = useState(String(detentionRate));
+
+  const onRateChange = (v: string) => {
+    setRateStr(v);
+    const n = parseFloat(v.replace(/[^0-9.]/g, ''));
+    if (Number.isFinite(n)) setDetentionRate(n);
+  };
 
   const onToggleDemo = (value: boolean) => {
     setDemoMode(value);
@@ -107,6 +114,14 @@ export default function Settings() {
         <Field label="Phone" value={profile.phone} onChangeText={(v) => setProfile({ phone: v })} placeholder="Contact number" keyboardType="numeric" />
         <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
           Added to your reports for a clear audit trail. A load can override this on its own form.
+        </Text>
+      </Card>
+
+      <SectionTitle title="Detention Pay" style={{ marginTop: 24 }} />
+      <Card style={{ gap: 14 }}>
+        <Field label="Default rate ($/hr)" value={rateStr} onChangeText={onRateChange} keyboardType="numeric" icon="cash" />
+        <Text style={[t.typography.caption, { color: t.colors.textSecondary }]}>
+          Used to estimate detention pay (after the 2-hour free window). Each load can override this on its payment screen.
         </Text>
       </Card>
 
