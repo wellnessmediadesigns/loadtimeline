@@ -86,6 +86,16 @@ export interface Photo {
   createdAt: number;
 }
 
+export interface Report {
+  id: string;
+  loadId: string | null;
+  loadNumber: string | null;
+  title: string;
+  scope: string | null;
+  fileUri: string;
+  createdAt: number;
+}
+
 /** A coordinate + reverse-geocoded address captured for an event/incident. */
 export interface GeoStamp {
   latitude: number | null;

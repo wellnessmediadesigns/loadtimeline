@@ -123,6 +123,21 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
     // Preserve any existing customer value as the shipper.
     d.execSync(`UPDATE loads SET shipper = customer_name WHERE customer_name IS NOT NULL AND customer_name != '';`);
   },
+  // v5 — saved report history (revisit/re-share a generated PDF later)
+  (d) => {
+    d.execSync(`
+      CREATE TABLE IF NOT EXISTS reports (
+        id TEXT PRIMARY KEY NOT NULL,
+        load_id TEXT,
+        load_number TEXT,
+        title TEXT NOT NULL,
+        scope TEXT,
+        file_uri TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(created_at);
+    `);
+  },
 ];
 
 /** Applies any pending migrations to a given DB using PRAGMA user_version. */

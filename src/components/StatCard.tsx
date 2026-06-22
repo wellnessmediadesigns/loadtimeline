@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/theme';
 import type { DetentionLevel } from '@/lib/detention';
@@ -22,9 +22,11 @@ interface StatCardProps {
   /** Distinct icon color, independent of detention `level`. Takes precedence when set. */
   tone?: StatTone;
   hint?: string;
+  /** When set, the card becomes tappable (with a chevron affordance). */
+  onPress?: () => void;
 }
 
-export function StatCard({ label, value, icon, level = 'normal', tone, hint }: StatCardProps) {
+export function StatCard({ label, value, icon, level = 'normal', tone, hint, onPress }: StatCardProps) {
   const t = useTheme();
 
   const accentByLevel: Record<DetentionLevel, { fg: string; bg: string }> = {
@@ -47,27 +49,22 @@ export function StatCard({ label, value, icon, level = 'normal', tone, hint }: S
   // `tone` → tinted card (Home/Analytics); `level` → legacy white card (Load detail).
   const tinted = !!tone;
 
-  return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: tinted ? accent.bg : t.colors.card,
-          borderRadius: t.radius.lg,
-          borderColor: tinted ? `${accent.fg}22` : t.colors.border,
-          ...t.shadow(tinted ? 1 : 2),
-        },
-      ]}
-    >
+  const containerStyle = {
+    backgroundColor: tinted ? accent.bg : t.colors.card,
+    borderRadius: t.radius.lg,
+    borderColor: tinted ? `${accent.fg}22` : t.colors.border,
+    ...t.shadow(tinted ? 1 : 2),
+  };
+
+  const inner = (
+    <>
       {icon ? (
-        <View
-          style={[
-            styles.iconWrap,
-            { backgroundColor: tinted ? accent.fg : accent.bg },
-          ]}
-        >
+        <View style={[styles.iconWrap, { backgroundColor: tinted ? accent.fg : accent.bg }]}>
           <Ionicons name={icon} size={20} color={tinted ? t.colors.onAccent : accent.fg} />
         </View>
+      ) : null}
+      {onPress ? (
+        <Ionicons name="chevron-forward" size={15} color={t.colors.textSecondary} style={styles.chevron} />
       ) : null}
       <Text style={[t.typography.display, { color: t.colors.text }]} numberOfLines={1}>
         {value}
@@ -80,12 +77,22 @@ export function StatCard({ label, value, icon, level = 'normal', tone, hint }: S
           {hint}
         </Text>
       ) : null}
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.card, containerStyle, { opacity: pressed ? 0.85 : 1 }]}>
+        {inner}
+      </Pressable>
+    );
+  }
+  return <View style={[styles.card, containerStyle]}>{inner}</View>;
 }
 
 const styles = StyleSheet.create({
   card: { flex: 1, minWidth: 150, borderWidth: 1, padding: 16, gap: 2 },
+  chevron: { position: 'absolute', top: 16, right: 14 },
   iconWrap: {
     width: 40,
     height: 40,
