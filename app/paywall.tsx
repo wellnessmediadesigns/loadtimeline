@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { Button } from '@/components';
 import { useTheme } from '@/theme/theme';
 import { useSettings } from '@/store/settings';
 import { FREE_LOAD_LIMIT, PRO_PRICE } from '@/lib/limits';
+import { getProPrice, purchasePro, restorePro } from '@/lib/purchases';
 
 // Fixed on-dark palette — the paywall is always a dark, branded surface.
 const ON_DARK = '#F8FAFC';
@@ -28,22 +29,52 @@ export default function Paywall() {
   const insets = useSafeAreaInsets();
   const { setPro } = useSettings();
   const [busy, setBusy] = useState(false);
+  const [price, setPrice] = useState(PRO_PRICE);
 
-  // NOTE: V1 unlock is a local flag. Real StoreKit / expo-in-app-purchases is
-  // wired later once an Apple Developer account + EAS build exist.
-  const unlock = () => {
-    setBusy(true);
-    setTimeout(() => {
-      setPro(true);
-      setBusy(false);
-      Alert.alert('Pro unlocked', 'Thank you! All Pro features are now available.', [
-        { text: 'Great', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) },
-      ]);
-    }, 400);
+  // Show the real StoreKit price when available (real build); else the default.
+  useEffect(() => {
+    getProPrice().then((p) => {
+      if (p) setPrice(p);
+    });
+  }, []);
+
+  const grant = () => {
+    setPro(true);
+    Alert.alert('Pro unlocked', 'Thank you! All Pro features are now available.', [
+      { text: 'Great', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) },
+    ]);
   };
 
-  const restore = () => {
-    Alert.alert('Restore Purchases', 'No previous purchase found on this device.');
+  const unlock = async () => {
+    setBusy(true);
+    try {
+      const ok = await purchasePro();
+      if (ok) grant();
+    } catch (e) {
+      // Store unavailable (e.g. Expo Go / pre-IAP build). Allow a local unlock
+      // only in development so the flow stays testable; never in production.
+      if (__DEV__) {
+        grant();
+      } else {
+        Alert.alert('Purchase unavailable', e instanceof Error ? e.message : 'Please try again later.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const restore = async () => {
+    setBusy(true);
+    try {
+      const found = await restorePro();
+      if (found) {
+        grant();
+      } else {
+        Alert.alert('Restore Purchases', 'No previous purchase was found on this device.');
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -87,7 +118,7 @@ export default function Paywall() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.priceRow}>
-          <Text style={[t.typography.hero, { color: '#fff', fontSize: 32 }]}>{PRO_PRICE}</Text>
+          <Text style={[t.typography.hero, { color: '#fff', fontSize: 32 }]}>{price}</Text>
           <Text style={[t.typography.body, { color: ON_DARK_MUTED }]}>one-time</Text>
         </View>
         <Button label="Unlock Pro" icon="lock-open" size="lg" loading={busy} onPress={unlock} />

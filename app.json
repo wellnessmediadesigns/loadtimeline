@@ -57,7 +57,8 @@
           "cameraPermission": "LoadTimeline uses the camera to attach photos of freight, seals, and damage to your load timeline."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": false
