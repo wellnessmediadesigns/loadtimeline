@@ -138,6 +138,22 @@ const MIGRATIONS: ((d: SQLite.SQLiteDatabase) => void)[] = [
       CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(created_at);
     `);
   },
+  // v6 — detention payment tracking (one record per load)
+  (d) => {
+    d.execSync(`
+      CREATE TABLE IF NOT EXISTS payments (
+        load_id TEXT PRIMARY KEY NOT NULL,
+        rate REAL,
+        amount_paid REAL,
+        paid_hours REAL,
+        paid_rate REAL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        note TEXT,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (load_id) REFERENCES loads(id) ON DELETE CASCADE
+      );
+    `);
+  },
 ];
 
 /** Applies any pending migrations to a given DB using PRAGMA user_version. */

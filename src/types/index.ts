@@ -96,6 +96,22 @@ export interface Report {
   createdAt: number;
 }
 
+export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'refused';
+
+export interface Payment {
+  loadId: string;
+  /** Per-load detention rate override ($/hr); null → use the global default. */
+  rate: number | null;
+  /** Dollars actually received. */
+  amountPaid: number | null;
+  /** Optional record of an hourly settlement. */
+  paidHours: number | null;
+  paidRate: number | null;
+  status: PaymentStatus;
+  note: string | null;
+  updatedAt: number;
+}
+
 /** A coordinate + reverse-geocoded address captured for an event/incident. */
 export interface GeoStamp {
   latitude: number | null;

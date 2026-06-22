@@ -2,20 +2,17 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/theme';
+import { AppTabBar } from '@/components/AppTabBar';
 
 export default function TabsLayout() {
   const t = useTheme();
   return (
     <Tabs
+      tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: t.colors.accent,
         tabBarInactiveTintColor: t.colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: t.colors.card,
-          borderTopColor: t.colors.border,
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
@@ -30,6 +27,13 @@ export default function TabsLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="payments"
+        options={{
+          title: 'Payments',
+          tabBarIcon: ({ color, size }) => <Ionicons name="cash" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -65,6 +65,7 @@ function RootNavigator() {
         <Stack.Screen name="load/[id]/edit" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="load/[id]/incident" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="load/[id]/report" />
+        <Stack.Screen name="load/[id]/payment" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="event/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="help" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
