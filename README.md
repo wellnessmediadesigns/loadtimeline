@@ -55,10 +55,17 @@ npm run typecheck      # tsc --noEmit
 > **Device required for full features.** Camera, GPS, and PDF generation need a real iPhone
 > (Expo Go) or a dev build — they don't run in a web preview.
 
-## Notes for V1
+## App Store launch checklist
 
-- **Pro unlock is a local flag** (`src/store/settings.tsx`). Real StoreKit / `expo-in-app-purchases`
-  should be wired once an Apple Developer account + EAS dev build are set up. See the `NOTE:`
-  markers in `app/paywall.tsx`.
-- Bundle identifier: `com.organizedfreight.loadtimeline` (see `app.json`).
-- App icon/splash are brand-navy placeholders in `assets/` — replace with final artwork before release.
+- **In-app purchase** — StoreKit is scaffolded via `react-native-iap` in `src/lib/purchases.ts`
+  and wired into `app/paywall.tsx` (real price, purchase, restore). In Expo Go / pre-IAP builds
+  the store is unavailable and the unlock falls back to a local flag **only in `__DEV__`**.
+  To go live: create a **Non-Consumable** IAP in App Store Connect with product id
+  `com.organizedfreight.loadtimeline.pro`, then `eas build -p ios` and test with a Sandbox Apple ID.
+- **App icon / splash** — generated brand assets in `assets/` (run `node tools/icon.js` to rebuild):
+  Organized Freight mark on a navy→blue gradient. Swap in bespoke artwork later if desired.
+- **EAS** — `eas.json` has build/submit profiles; set `submit.production.ios.ascAppId` to your
+  App Store Connect app id.
+- **Bundle id:** `com.organizedfreight.loadtimeline`; iOS `buildNumber` in `app.json` (bump per submit).
+- **Still owner-only:** Apple Developer account + App Store Connect listing, a hosted privacy policy
+  URL, App Privacy labels (Location + Photos, user-initiated; no tracking), and store screenshots.
